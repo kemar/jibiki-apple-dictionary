@@ -82,7 +82,7 @@ python3 jibiki_dict.py --steps compile                                      # Re
 python3 jibiki_dict.py --no-examples                                        # Without the examples.
 python3 jibiki_dict.py --no-english                                         # Drop JMdict's English only.
 python3 jibiki_dict.py --work-dir ~/dict                                    # Another work folder.
-python3 jibiki_dict.py --ddk "~/Dictionary Development Kit"                 # DDK already installed
+python3 jibiki_dict.py --ddk "~/Dictionary Development Kit"                 # DDK already installed.
 python3 jibiki_dict.py --jpn-fra ~/tmp/a.xml.gz --fra-jpn ~/tmp/b.xml.gz
 ```
 
@@ -99,8 +99,7 @@ Without `--jpn-fra` / `--fra-jpn`, both volumes are looked for in the current fo
     - they are flagged with an `en` badge
     - `--no-english` drops them
 - in the French → Japanese volume:
-    - Japanese is written in rōmaji with the kanji as ruby annotations
-    - the original Raguet‑Martin convention, kept as it stands
+    - the original Raguet‑Martin convention is kept as it stands: Japanese is written in rōmaji with the kanji as ruby annotations
 
 
 ## Development
@@ -174,7 +173,7 @@ Not covered at all: the rendering itself, and the compilation. The first goes th
 ## Seeing the result
 
 ```bash
-make preview                    # A varied pick, in light and dark.
+make preview                   # A varied pick, in light and dark.
 make preview WORDS="水 argent"  # The entries of your choice.
 ```
 
