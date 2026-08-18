@@ -1,0 +1,8 @@
+.venv/
+
+jibiki.fr_fra_jpn*
+jibiki.fr_jpn_fra*
+
+__pycache__/
+
+build/

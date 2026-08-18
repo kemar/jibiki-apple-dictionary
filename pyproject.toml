@@ -1,0 +1,30 @@
+[project]
+name = "jibiki-apple-dictionary"
+version = "1.0.0"
+requires-python = ">=3.9"
+
+[dependency-groups]
+dev = [
+    "ruff==0.16.3",  # https://github.com/astral-sh/ruff/tags
+]
+
+# https://docs.astral.sh/ruff/settings/
+
+[tool.ruff]
+extend-exclude = ["build", "tests/expected", "tests/sample_*.xml"]
+lint.select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "C",    # flake8-comprehensions
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "RET",  # return statements
+    "ARG",  # unused arguments
+    "SIM",  # needless complications
+]
+lint.ignore = [
+    "B008",  # do not perform function calls in argument defaults
+]
+line-length = 119

@@ -1,0 +1,902 @@
+#!/usr/bin/env python3
+"""
+jibiki_dict.py — Builds a Japanese ↔ French dictionary for the macOS Dictionary
+application, from the Jibiki.fr data (CC0).
+
+Manual prerequisite: download both volumes from https://jibiki.fr/data/
+
+    jibiki.fr_jpn_fra.xml.gz     (Japanese → French)
+    jibiki.fr_fra_jpn.xml.gz     (French → Japanese)
+
+and drop them in the current directory (or point at them with --jpn-fra /
+--fra-jpn).
+
+    python3 jibiki_dict.py                     # Convert, then compile.
+    python3 jibiki_dict.py --steps convert     # Stop after the conversion.
+    python3 jibiki_dict.py --no-examples       # Lighter dictionary.
+
+The script downloads nothing and installs nothing: it produces a `.dictionary`
+bundle that you move into `~/Library/Dictionaries` yourself.
+
+Dependencies: none (Python 3.9+ standard library).
+
+Compilation uses Apple's Dictionary Development Kit, fetched automatically from
+GitHub (universal binaries).
+
+The dictionary content stays French, as does anything the reader sees; so do
+the Jibiki element paths, which are data rather than code.
+
+Data: https://jibiki.fr/data/ — Mathieu Mangeot-Nagata, CC0 licence.
+"""
+
+from __future__ import annotations
+
+import argparse
+import gzip
+import html
+import os
+import platform
+import re
+import shutil
+import subprocess
+import sys
+import time
+import unicodedata
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+# --------------------------------------------------------------------------
+# Configuration
+# --------------------------------------------------------------------------
+
+DICT_NAME = "Japonais-Francais (Jibiki)"  # Bundle file name (ASCII).
+
+DISPLAY_NAME = "Japonais-Français (Jibiki)"  # Name shown in Dictionary.app.
+
+BUNDLE_ID = "fr.jibiki.dictionnaire.jpn-fra"
+
+VERSION = "1.0"
+
+COPYRIGHT = "Données Jibiki.fr (Mathieu Mangeot-Nagata) — licence CC0, domaine public."
+
+# Files to download by hand from https://jibiki.fr/data/. For each volume, the
+# file names recognised automatically.
+EXPECTED_FILES = {
+    "jpn_fra": ("jibiki.fr_jpn_fra.xml.gz", "jibiki.fr_jpn_fra.gz", "jibiki.fr_jpn_fra.xml", "jpn_fra.xml.gz"),
+    "fra_jpn": ("jibiki.fr_fra_jpn.xml.gz", "jibiki.fr_fra_jpn.gz", "jibiki.fr_fra_jpn.xml", "fra_jpn.xml.gz"),
+}
+
+LABELS = {"jpn_fra": "Japanese → French", "fra_jpn": "French → Japanese"}
+
+# Mirror of Apple's Dictionary Development Kit with universal binaries (x86_64 + arm64).
+DDK_REPO = "https://github.com/nanoskript/dictionary-development-kit.git"
+
+STEPS = ("convert", "compile")
+
+# Grammatical abbreviations of the French → Japanese volume (Raguet-Martin).
+# Expansions are shown to the reader, hence in French.
+FR_POS = {
+    "sm": "nom masculin",
+    "sf": "nom féminin",
+    "s": "nom",
+    "smpl": "nom masculin pluriel",
+    "sfpl": "nom féminin pluriel",
+    "smf": "nom masculin ou féminin",
+    "si": "nom",
+    "st": "nom",
+    "a": "adjectif",
+    "am": "adjectif masculin",
+    "adv": "adverbe",
+    "vt": "verbe transitif",
+    "vi": "verbe intransitif",
+    "vr": "verbe réfléchi",
+    "va": "verbe auxiliaire",
+    "prép": "préposition",
+    "prep": "préposition",
+    "pr": "pronom",
+    "conj": "conjonction",
+    "interj": "interjection",
+    "int": "interjection",
+    "part": "particule",
+    "art": "article",
+    "préf": "préfixe",
+    "pref": "préfixe",
+    "l": "locution",
+    "l a": "locution adjectivale",
+    "l adv": "locution adverbiale",
+    "l lat": "locution latine",
+}
+
+# Jibiki inline elements → (HTML tag, CSS class).
+INLINE = {
+    "ruby": ("ruby", None),
+    "rt": ("rt", None),
+    "mv": ("b", "mv"),  # Headword inside a French example.
+    "tv": ("b", "tv"),  # Featured term.
+    "vr": ("b", "vr"),  # Headword in rōmaji.
+    "vj": ("b", "vj"),  # Headword in Japanese.
+    "en": ("span", "en"),  # English gloss (inherited from JMdict).
+}
+
+# Syllabic n (ん) before a vowel or y. Everyone writes it differently: Jibiki
+# uses a dot (han.i), Hepburn an apostrophe (han'i), other usages a hyphen
+# (han-i), and at the keyboard most people type nothing (hani). All four
+# spellings are indexed. Requiring an n in front leaves the corpus's Latin
+# abbreviations alone (Ph.D., Q.E.D., Inc.).
+SYLLABIC_N = re.compile(r"n[.'’-](?=[aeiouyāīūēō])", re.IGNORECASE)
+N_SPELLINGS = (".", "'", "’", "-", "")
+
+# Rōmaji syllable separators, dropped to obtain the bare form (bēta・karoten → betakaroten, sō-i → soi).
+SEPARATORS = str.maketrans({".": "", "-": "", "・": "", "·": ""})
+
+
+def log(message: str) -> None:
+    print(f"  {message}", flush=True)
+
+
+def esc(text: str) -> str:
+    """
+    Escaping for XML text content (apostrophes left as they are).
+    """
+    return html.escape(text, quote=False)
+
+
+def esc_attr(text: str) -> str:
+    return html.escape(text, quote=True)
+
+
+# --------------------------------------------------------------------------
+# 1. Locating the files supplied by the user.
+# --------------------------------------------------------------------------
+
+
+def locate(volume: str, given: Path | None, folders: list[Path]) -> Path:
+    """
+    Return the file for the requested volume: the one named on the command
+    line, otherwise the first recognised name found in the given folders.
+    """
+    if given:
+        path = given.expanduser().resolve()
+        if not path.exists():
+            sys.exit(f"file not found: {path}")
+        return path
+    for folder in folders:
+        for name in EXPECTED_FILES[volume]:
+            candidate = folder / name
+            if candidate.exists():
+                return candidate.resolve()
+    names = ", ".join(EXPECTED_FILES[volume][:2])
+    sys.exit(
+        f"{LABELS[volume]} volume not found.\n"
+        f"  Download it from https://jibiki.fr/data/ ({names}),\n"
+        f"  drop it in {folders[0]} or give its path with\n"
+        f"  --{volume.replace('_', '-')} /path/to/the/file"
+    )
+
+
+def open_volume(path: Path):
+    """
+    Open a .xml or a .xml.gz indifferently.
+    """
+    if path.suffix == ".gz":
+        return gzip.open(path, "rb")
+    return open(path, "rb")
+
+
+# --------------------------------------------------------------------------
+# 2. Conversion to Apple's XML format
+# --------------------------------------------------------------------------
+
+
+def articles(path: Path):
+    """
+    Walk the <article> elements as a stream (constant memory).
+    """
+    with open_volume(path) as fh:
+        context = ET.iterparse(fh, events=("start", "end"))
+        _, root = next(context)
+        for event, el in context:
+            if event == "end" and el.tag == "article":
+                yield el
+                el.clear()
+                root.clear()
+
+
+def inline_html(el: ET.Element) -> str:
+    """
+    Serialise the mixed content of a Jibiki element as XHTML.
+    """
+    pieces = []
+    if el.text:
+        pieces.append(esc(el.text))
+    for child in el:
+        tag, css_class = INLINE.get(child.tag, ("span", child.tag))
+        attribute = f' class="{css_class}"' if css_class else ""
+        pieces.append(f"<{tag}{attribute}>{inline_html(child)}</{tag}>")
+        if child.tail:
+            pieces.append(esc(child.tail))
+    return "".join(pieces)
+
+
+def plain(el: ET.Element | None) -> str:
+    """
+    An element's text without markup, or the empty string.
+    """
+    return "".join(el.itertext()).strip() if el is not None else ""
+
+
+def without_accents(word: str) -> str:
+    """
+    « périphrase » → « periphrase », so the word can be typed plainly.
+    """
+    return "".join(c for c in unicodedata.normalize("NFD", word) if unicodedata.category(c) != "Mn")
+
+
+def extra_keys(word: str, romaji: bool = False) -> list[str]:
+    """
+    Alternative spellings under which a headword can be searched.
+
+    For any word: the accent-free form (périphrase → periphrase), which also
+    covers rōmaji macrons (kyōto → kyoto).
+
+    For rōmaji only: the four spellings of a syllabic n before a vowel or y —
+    han.i, han'i, han-i, hani — and the form stripped of its syllable
+    separators. French hyphens are kept: « a-coup » has no business becoming
+    « acoup ».
+    """
+    bases = [word]
+    if romaji and SYLLABIC_N.search(word):
+        bases += [SYLLABIC_N.sub("n" + spelling, word) for spelling in N_SPELLINGS]
+
+    variants: list[str] = []
+    for base in bases:
+        forms = [base, without_accents(base)]
+        if romaji:
+            forms += [form.translate(SEPARATORS) for form in list(forms)]
+        for form in forms:
+            if form and form != word and form not in variants:
+                variants.append(form)
+    return variants
+
+
+# ---- tag factory ---------------------------------------------------------
+
+
+def tag(css_class: str, *contents: str) -> str:
+    """
+    A <span> of the given class, or nothing when its content is empty.
+
+    That "nothing" replaces the countless « if the value exists, then emit »
+    tests that used to clutter the entry builders.
+    """
+    inside = "".join(contents)
+    return f'<span class="{css_class}">{inside}</span>' if inside else ""
+
+
+def labels(el: ET.Element, *paths: str, css_class: str = "lbl") -> str:
+    """
+    The non-empty labels found at the given paths, in order.
+    """
+    return "".join(tag(css_class, esc(plain(el.find(path)))) for path in paths)
+
+
+def numbered_senses(senses: list[str]) -> str:
+    """
+    Stack the senses of a block. Past the first, each gets its number.
+    """
+    numbered = len(senses) > 1
+    return "".join(
+        tag("semb x_xd1 hasSn" if numbered else "semb x_xd1", tag("sn", str(rank)) if numbered else "", content)
+        for rank, content in enumerate(senses, 1)
+    )
+
+
+class Keys:
+    """
+    An entry's search keys, without duplicates, in insertion order.
+    """
+
+    def __init__(self, title: str) -> None:
+        self.title = title
+        self.seen: set[str] = set()
+        self.tags: list[str] = []
+
+    def add(self, value: str, yomi: str = "") -> None:
+        value = value.strip()
+        if not value or value in self.seen:
+            return
+        self.seen.add(value)
+        reading = f' d:yomi="{esc_attr(yomi)}"' if yomi else ""
+        self.tags.append(f'<d:index d:value="{esc_attr(value)}" d:title="{esc_attr(self.title)}"{reading}/>')
+
+    def add_with_variants(self, value: str, romaji: bool = False) -> None:
+        """
+        The headword, then its variants: accents, macrons, syllabic n.
+        """
+        self.add(value)
+        for variant in extra_keys(value, romaji=romaji):
+            self.add(variant)
+
+    def __str__(self) -> str:
+        return "".join(self.tags)
+
+    def __bool__(self) -> bool:
+        return bool(self.tags)
+
+
+def entry(eid: str, title: str, keys: Keys, *body: str) -> str:
+    """
+    Assemble a complete entry: its search keys, then its content.
+    """
+    return f'<d:entry id="{eid}" d:title="{esc_attr(title)}" class="entry">' + str(keys) + "".join(body) + "</d:entry>"
+
+
+SOURCE_JPN = tag("source", "Jibiki.fr — Cesselin / JMdict (CC0)")
+SOURCE_FRA = tag("source", "Jibiki.fr — Raguet-Martin (CC0)")
+
+SENSE_LABELS = (
+    "étiquettes-sens/domaine",
+    "étiquettes-sens/registre",
+    "étiquettes-sens/info",
+    "étiquettes-sens/littéralement",
+)
+
+
+# ---- Japanese → French volume --------------------------------------------
+
+
+def jpn_headwords(article: ET.Element) -> list[tuple[str, str, str, str]]:
+    """
+    The article's headwords: (Japanese, hiragana, rōmaji, shown rōmaji).
+    """
+    forms = []
+    for headword in article.findall("forme/vedette"):
+        romaji = headword.find("vedette-romaji")
+        shown = (romaji.get("affiche") or "").strip() if romaji is not None else ""
+        form = (plain(headword.find("vedette-jpn")), plain(headword.find("vedette-hiragana")), plain(romaji), shown)
+        if any(form[:3]):
+            forms.append(form)
+    return forms
+
+
+def jpn_headword_group(forms: list[tuple[str, str, str, str]]) -> str:
+    """
+    The heading line: headword, kana reading, rōmaji, competing spellings.
+    """
+    jp, kana, romaji, shown = forms[0]
+    others = [other for other in dict.fromkeys(j or k for j, k, _, _ in forms[1:]) if other and other != jp]
+    return tag(
+        "hg x_xh0",
+        tag("hw", esc(jp or kana)),
+        tag("pr", esc(kana)) if kana != jp else "",
+        tag("prx", esc(shown or romaji)),
+        tag("hgSub1", "Autres formes : " + esc("、".join(others)) if others else ""),
+    )
+
+
+def jpn_sense_blocks(article: ET.Element, with_english: bool) -> tuple[str, int]:
+    """
+    The senses grouped by part of speech, and how many there are.
+    """
+    blocks, total = [], 0
+    for block in article.findall("sémantique/bloc-gram"):
+        senses = []
+        for sense in block.findall("sens"):
+            text = sense.find("texte-sens")
+            if text is None:
+                continue
+            english = text.get("lang") == "eng"
+            if english and not with_english:
+                continue
+            content = inline_html(text).strip()
+            if not content:
+                continue
+            marks = labels(sense, *SENSE_LABELS)
+            if english:
+                marks += tag("lbl x_rr", "en")
+            senses.append(tag("trg t_en" if english else "trg", marks, tag("trans", content)))
+        if not senses:
+            continue
+        total += len(senses)
+        blocks.append(
+            tag(
+                "gramb x_xd0",
+                tag(
+                    "posg x_xdh",
+                    labels(block, "étiquettes/gram", css_class="pos"),
+                    labels(block, "étiquettes/domaine"),
+                ),
+                numbered_senses(senses),
+            )
+        )
+    return "".join(blocks), total
+
+
+def jpn_examples(article: ET.Element) -> tuple[str, int]:
+    """
+    The « exemples » section: Japanese sentence, rōmaji, translation.
+    """
+    examples = []
+    for example in article.findall("sémantique/exemples/exemple"):
+        japanese, romaji = example.find("jpn"), plain(example.find("romaji"))
+        if japanese is None and not romaji:
+            continue
+        translations = "".join(
+            tag("trg", tag("trans", esc(t))) for t in (plain(s) for s in example.findall(".//texte-sous-sens")) if t
+        )
+        # A few examples in the source are empty through and through: tag()
+        # reduces them to nothing, and they are not counted — otherwise the
+        # entry would inherit an « exemples » heading with nothing under it.
+        piece = tag(
+            "exg x_xd2",
+            tag("ex", inline_html(japanese) if japanese is not None else ""),
+            tag("ro", esc(romaji)),
+            translations,
+        )
+        if piece:
+            examples.append(piece)
+    if not examples:
+        return "", 0
+    return (tag("x_xo0", tag("x_xoLblBlk", "exemples"), "".join(examples)), len(examples))
+
+
+def jpn_fra_entry(article: ET.Element, eid: str, with_english: bool, with_examples: bool) -> str | None:
+    forms = jpn_headwords(article)
+    if not forms:
+        return None
+    title = forms[0][0] or forms[0][1] or forms[0][2]
+
+    keys = Keys(title)
+    for jp, kana, romaji, shown in forms:
+        keys.add(jp, kana)
+        keys.add(kana, kana)
+        for reading in (romaji, shown):
+            if reading:
+                keys.add_with_variants(reading, romaji=True)
+    if not keys:
+        return None
+
+    senses, count = jpn_sense_blocks(article, with_english)
+    examples, example_count = jpn_examples(article) if with_examples else ("", 0)
+    if count + example_count == 0:  # entry emptied by --no-english
+        return None
+
+    return entry(eid, title, keys, jpn_headword_group(forms), senses, examples, SOURCE_JPN)
+
+
+# ---- French → Japanese volume --------------------------------------------
+
+
+def fra_segments(sense: ET.Element) -> str:
+    """
+    A sense's segments: French phrase, then Japanese equivalent.
+
+    The first one doubles as the sense heading (class t_first): the stylesheet
+    puts it on the number's line, without bullet or indent.
+    """
+    segments: list[str] = []
+    for segment in sense.findall("segments/segment"):
+        french, japanese = segment.find("fra"), segment.find("jpn")
+        left = inline_html(french).strip() if french is not None else ""
+        right = inline_html(japanese).strip() if japanese is not None else ""
+        if not left and not right:
+            continue
+        first = " t_first" if not segments else ""
+        if left:
+            segments.append(tag(f"exg x_xd2{first}", tag("ex", left), tag("trg", tag("trans", right))))
+        else:  # direct equivalent, without a phrase
+            segments.append(tag(f"trg{first}", tag("trans", right)))
+    return "".join(segments)
+
+
+def fra_jpn_entry(article: ET.Element, eid: str) -> str | None:
+    title = plain(article.find("forme/vedette"))
+    if not title:
+        return None
+    feminine = plain(article.find("forme/vedette-féminin"))
+    variant = plain(article.find("forme/vedette-variante"))
+    code = plain(article.find("forme/gram"))
+
+    keys = Keys(title)
+    for word in (title, feminine, variant):
+        if word:
+            keys.add_with_variants(word)
+
+    senses = []
+    for sense in article.findall("sémantique/sens"):
+        segments = fra_segments(sense)
+        if segments:
+            senses.append(labels(sense, "étiquettes/domaine", "étiquettes/registre") + segments)
+    if not senses:
+        return None
+
+    heading = tag("hg x_xh0", tag("hw", esc(title)), tag("hv", esc(feminine)), tag("hv", esc(variant)))
+    # The part of speech forms a block under the headword, as in the Japanese →
+    # French volume: same structure, hence same rendering.
+    body = tag("gramb x_xd0", tag("posg x_xdh", tag("pos", esc(FR_POS.get(code, code)))), numbered_senses(senses))
+    return entry(eid, title, keys, heading, body, SOURCE_FRA)
+
+
+# ---- assembly ------------------------------------------------------------
+
+HEADER = (
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<d:dictionary xmlns="http://www.w3.org/1999/xhtml" '
+    'xmlns:d="http://www.apple.com/DTDs/DictionaryService-1.0.rng">\n'
+)
+
+FRONT_MATTER = (
+    '<d:entry id="front_back_matter" d:title="Jibiki.fr">'
+    '<d:index d:value="Jibiki.fr" d:title="À propos de ce dictionnaire"/>'
+    "<h1>Dictionnaire japonais-français Jibiki.fr</h1>"
+    "<p>Dictionnaire bidirectionnel construit à partir des données du projet "
+    "Jibiki.fr de Mathieu Mangeot-Nagata (LIG / GETALP, Grenoble).</p>"
+    "<p>Sens japonais → français : dictionnaire Cesselin (1940), JMdict et "
+    "Wikipédia. Sens français → japonais : dictionnaire Raguet-Martin et "
+    "Wikipédia. Données publiées sous licence Creative Commons CC0 "
+    "(domaine public).</p>"
+    "<p>Source : https://jibiki.fr/data/</p>"
+    "</d:entry>\n"
+)
+
+
+def convert(paths: dict[str, Path], output: Path, with_english: bool, with_examples: bool) -> int:
+    start = time.time()
+    total = 0
+    with open(output, "w", encoding="utf-8") as f:
+        f.write(HEADER)
+        f.write(FRONT_MATTER)
+        volumes = (
+            ("jpn_fra", lambda art, n: jpn_fra_entry(art, f"jf{n}", with_english, with_examples)),
+            ("fra_jpn", lambda art, n: fra_jpn_entry(art, f"fj{n}")),
+        )
+        for volume, build in volumes:
+            label = LABELS[volume]
+            n = 0
+            for article in articles(paths[volume]):
+                n += 1
+                built = build(article, n)
+                if built:
+                    f.write(built + "\n")
+                    total += 1
+                if n % 25000 == 0:
+                    log(f"{label}: {n} articles")
+            log(f"{label}: {n} articles read, {total} entries so far")
+        f.write("</d:dictionary>\n")
+    log(
+        f"{total} entries written to {output.name} ({output.stat().st_size / 1e6:.0f} MB, {time.time() - start:.0f} s)"
+    )
+    return total
+
+
+CSS = """
+@charset "UTF-8";
+@namespace d url(http://www.apple.com/DTDs/DictionaryService-1.0.rng);
+
+/* Written after the typographic system of the dictionaries shipped with macOS:
+   ui-serif for the body, system-ui for the labels, and Apple's semantic
+   colours, which follow the light and dark themes on their own. */
+
+body { font-family: ui-serif; font-size: 12pt; color: CanvasText;
+       margin: 1em; padding: .5em 1em; }
+html.apple_client-panel body { margin-top: 0; padding: .3em .6em; }
+
+/* A search can return several entries in a row: Dictionary.app strings them
+   together in a single document. We separate them plainly, the way the
+   dictionaries shipped by Apple do — their entries carry the "entry" class,
+   which the source declares, not the application. */
+*.entry { display: block; line-height: 140%; margin-bottom: 1em; }
+*.entry + *.entry { margin-top: 3em; }
+
+/* Fallback should that class not survive as far as the rendering: the headword
+   group takes the offset instead, except for the first entry displayed. The
+   two mechanisms cannot add up, the second rule cancelling the fallback as
+   soon as the entry container exists. */
+span.hg { margin-top: 3em; }
+html.apple_client-panel *.entry + *.entry,
+html.apple_client-panel span.hg { margin-top: 1.2em; }
+*.entry span.hg, body > span.hg:first-child,
+html.apple_client-panel *.entry span.hg { margin-top: 0; }
+
+/*==== headword group ====*/
+
+span.hg { display: block; margin-bottom: .35em; }
+span.hw { font-size: 170%; font-weight: 600; }
+html.apple_client-panel span.hw { font-size: 130%; }
+span.pr { font-size: 105%; color: -apple-system-secondary-label; margin-left: .45em; }
+span.prx { font-size: 92%; font-style: italic;
+           color: -apple-system-tertiary-label; margin-left: .4em; }
+span.hv { font-size: 105%; font-weight: 600;
+          color: -apple-system-secondary-label; margin-left: .4em; }
+span.hgSub1 { display: block; font-size: 88%; margin-top: .3em;
+              color: -apple-system-secondary-label; }
+
+/*==== labels ====*/
+
+/* The size is carried by .pos alone: setting it on .posg too, which wraps it,
+   would multiply both percentages and shrink the label. */
+span.posg, span.pos { font-family: system-ui, "Hiragino Sans", sans-serif;
+                      font-weight: 500; color: -apple-system-secondary-label; }
+span.pos { font-size: 88%; margin-right: .35em; }
+span.lbl { font-family: system-ui; font-size: 88%; font-variant: small-caps;
+           text-transform: lowercase; letter-spacing: .03em; margin-right: .35em;
+           color: -apple-system-secondary-label; }
+span.lbl.x_rr { border: solid 1px -apple-system-secondary-label;
+                -webkit-border-radius: 2px; padding: 1px 3px; font-size: 70%;
+                font-variant: normal; text-transform: none; letter-spacing: 0;
+                vertical-align: 8%; }
+
+/*==== sense blocks ====*/
+
+span.gramb { display: block; margin: .5em 0; clear: both; }
+span.posg.x_xdh { display: block; margin-bottom: .15em; }
+span.semb { display: block; margin: .2em 0 .2em 2em; clear: both; }
+/* The number floats in the gutter so that it stays on the sense's first line
+   even when that sense opens with a block — the case of bilingual segments. */
+span.sn { float: left; width: 1.6em; margin-left: -2em; padding-right: .4em;
+          text-align: right; font-family: system-ui; font-weight: 600;
+          font-size: 92%; color: -apple-system-secondary-label; }
+span.trans { font-weight: normal; }
+span.trg.t_en span.trans { color: -apple-system-secondary-label; }
+
+/*==== examples and segments ====*/
+
+span.x_xo0 { display: block; margin-top: .9em; clear: both; }
+span.x_xoLblBlk { display: block; font-family: system-ui; font-size: 82%;
+                  font-variant: small-caps; text-transform: lowercase;
+                  letter-spacing: .03em; color: -apple-system-secondary-label;
+                  border-bottom: solid thin -apple-system-tertiary-label;
+                  padding-bottom: .25em; margin-bottom: .5em; }
+span.exg { display: block; margin: .35em 0 .35em 1.1em; }
+span.semb span.trg { display: block; }
+/* Ruby annotations in the French → Japanese volume stick out above the line:
+   we give them room so they do not touch the line before. */
+span.semb span.trg span.trans { line-height: 1.55; }
+/* The first segment doubles as the sense heading: it stays on the number's
+   line, without bullet or indent. The others are indented examples. */
+span.semb span.exg.t_first { display: inline; margin-left: 0; }
+span.semb span.exg.t_first > span.ex { display: inline; text-indent: 0; }
+span.semb span.exg.t_first > span.ex:before { content: ""; }
+span.semb span.trg.t_first { display: inline; }
+span.exg span.ex { display: block; text-indent: -1.1em; font-weight: 500; }
+span.exg span.ex:before { content: "\\25B8\\a0"; color: -apple-system-tertiary-label; }
+span.exg span.ro { display: block; font-size: 88%; font-style: italic;
+                   color: -apple-system-tertiary-label; }
+span.exg span.trg { display: block; }
+
+b.mv, b.tv, b.vr, b.vj { font-weight: 600; color: CanvasText; }
+
+/* In the French → Japanese volume the ruby annotations carry the kanji: they
+   are content, not ornament. We keep them readable. */
+ruby rt { font-size: 85%; color: -apple-system-secondary-label; }
+ruby { ruby-position: over; }
+
+/*==== entry footer ====*/
+
+span.source { display: block; clear: both; margin-top: 1em; font-family: system-ui;
+              font-size: 76%; color: -apple-system-tertiary-label; }
+"""
+
+
+def plist() -> str:
+    # No DOCTYPE declaration: xsltproc would try to fetch the DTD from
+    # apple.com, which is no longer served, and would print a useless warning
+    # during compilation. plutil validates the plist without it, and the file
+    # ends up converted to binary inside the bundle anyway.
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key><string>French</string>
+    <key>CFBundleIdentifier</key><string>{BUNDLE_ID}</string>
+    <key>CFBundleName</key><string>{DISPLAY_NAME}</string>
+    <key>CFBundleDisplayName</key><string>{DISPLAY_NAME}</string>
+    <key>CFBundleShortVersionString</key><string>{VERSION}</string>
+    <key>DCSDictionaryNativeDisplayName</key><string>{DISPLAY_NAME}</string>
+    <key>DCSDictionaryCopyright</key>
+    <string>{COPYRIGHT}</string>
+    <key>DCSDictionaryManufacturerName</key><string>https://jibiki.fr/</string>
+    <key>DCSDictionaryPrimaryLanguage</key><string>fr</string>
+    <key>DCSDictionaryLanguages</key>
+    <array>
+        <dict>
+            <key>DCSDictionaryDescriptionLanguage</key><string>fr</string>
+            <key>DCSDictionaryIndexLanguage</key><string>ja</string>
+        </dict>
+        <dict>
+            <key>DCSDictionaryDescriptionLanguage</key><string>ja</string>
+            <key>DCSDictionaryIndexLanguage</key><string>fr</string>
+        </dict>
+    </array>
+    <key>DCSDictionaryFrontMatterReferenceID</key><string>front_back_matter</string>
+    <key>DCSDictionaryUseSystemAppearance</key><true/>
+</dict>
+</plist>
+"""
+
+
+# --------------------------------------------------------------------------
+# 3. Compilation (Dictionary Development Kit).
+# --------------------------------------------------------------------------
+
+
+def check_rosetta(ddk: Path) -> None:
+    """
+    The DDK used by default has universal binaries: nothing to do. This is a
+    safety net for when --ddk points at an older, x86_64-only kit: on Apple
+    Silicon, Rosetta 2 then becomes necessary.
+    """
+    if platform.machine() != "arm64":
+        return
+    try:
+        archs = subprocess.run(
+            ["lipo", "-archs", str(ddk / "bin" / "build_key_index")], capture_output=True, text=True, check=True
+        ).stdout
+        if "arm64" in archs:
+            return
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
+    try:
+        subprocess.run(["arch", "-x86_64", "/usr/bin/true"], check=True, capture_output=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        sys.exit(
+            "This DDK only contains x86_64 binaries and Rosetta 2 is "
+            "missing. Install it with:\n"
+            "    softwareupdate --install-rosetta --agree-to-license"
+        )
+
+
+def get_ddk(folder: Path, given: Path | None = None) -> Path:
+    if given:
+        if not (given / "bin" / "build_dict.sh").exists():
+            sys.exit(f"invalid DDK: {given}/bin/build_dict.sh not found")
+        return given
+    ddk = folder / "Dictionary Development Kit"
+    if (ddk / "bin" / "build_dict.sh").exists():
+        log(f"DDK already there: {ddk}")
+        return ddk
+    log("fetching the Dictionary Development Kit from GitHub")
+    subprocess.run(["git", "clone", "--depth", "1", "-q", DDK_REPO, str(ddk)], check=True)
+    return ddk
+
+
+def compile_dictionary(ddk: Path, work: Path, source: Path, css: Path, info: Path) -> Path:
+    """
+    Compile the bundle. Every path is relative to `work`, whose name holds no
+    space: build_dict.sh does not quote them everywhere.
+    """
+    check_rosetta(ddk)
+    environment = dict(os.environ, DICT_DEV_KIT_OBJ_DIR="objects")
+    log("compiling — expect several minutes")
+    subprocess.run(
+        [str(ddk / "bin" / "build_dict.sh"), "-v", "10.11", DICT_NAME, source.name, css.name, info.name],
+        check=True,
+        env=environment,
+        cwd=str(work),
+    )
+    built = work / "objects" / f"{DICT_NAME}.dictionary"
+    if not built.exists():
+        sys.exit(f"compilation finished but {built} is nowhere to be found")
+
+    # Move the bundle up to the root of the work folder: easier to find than in
+    # objects/, which holds the intermediate files.
+    bundle = work / built.name
+    if bundle.exists():
+        shutil.rmtree(bundle)
+    shutil.move(str(built), str(bundle))
+    log(f"bundle built: {bundle}")
+    return bundle
+
+
+# --------------------------------------------------------------------------
+# 4. Checking.
+# --------------------------------------------------------------------------
+
+
+def check_xml(path: Path) -> tuple[int, int]:
+    """
+    Reparse the produced file: valid XML? how many entries and keys?
+    """
+    entries = keys = 0
+    with open(path, "rb") as fh:
+        context = ET.iterparse(fh, events=("start", "end"))
+        _, root = next(context)
+        for event, el in context:
+            if event != "end":
+                continue
+            name = el.tag.rsplit("}", 1)[-1]
+            if name == "index":
+                keys += 1
+            elif name == "entry":
+                entries += 1
+                el.clear()
+                root.clear()
+    return entries, keys
+
+
+# --------------------------------------------------------------------------
+# Main program.
+# --------------------------------------------------------------------------
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(
+        description="Builds a Japanese ↔ French dictionary for the macOS Dictionary application (Jibiki.fr data)."
+    )
+    p.add_argument(
+        "--steps",
+        nargs="+",
+        choices=STEPS,
+        default=list(STEPS),
+        metavar="STEP",
+        help="steps to run among: " + ", ".join(STEPS) + " (default: all of them)",
+    )
+    p.add_argument(
+        "--work-dir",
+        type=Path,
+        default=Path("build"),
+        help="work folder, with no space in its path (default: ./build)",
+    )
+    p.add_argument(
+        "--jpn-fra",
+        type=Path,
+        help="Japanese → French volume downloaded beforehand "
+        "(default: jibiki.fr_jpn_fra.xml.gz in the current folder)",
+    )
+    p.add_argument(
+        "--fra-jpn",
+        type=Path,
+        help="French → Japanese volume downloaded beforehand "
+        "(default: jibiki.fr_fra_jpn.xml.gz in the current folder)",
+    )
+    p.add_argument("--no-english", action="store_true", help="drop the English senses inherited from JMdict")
+    p.add_argument("--no-examples", action="store_true", help="leave the examples out (lighter dictionary)")
+    p.add_argument(
+        "--ddk",
+        type=Path,
+        help="use an already installed Dictionary Development Kit "
+        "(the one from the Additional Tools for Xcode, say) "
+        "instead of cloning one",
+    )
+    args = p.parse_args()
+
+    work: Path = args.work_dir.resolve()
+    if " " in str(work):
+        sys.exit(f"the work path must not contain a space: {work}")
+    work.mkdir(parents=True, exist_ok=True)
+    source_xml = work / "JibikiDictionary.xml"
+    css_path = work / "JibikiDictionary.css"
+    plist_path = work / "JibikiInfo.plist"
+
+    if "convert" in args.steps:
+        print("[1/2] Converting to Apple's format")
+        folders = [Path.cwd(), work, work / "data"]
+        paths = {
+            "jpn_fra": locate("jpn_fra", args.jpn_fra, folders),
+            "fra_jpn": locate("fra_jpn", args.fra_jpn, folders),
+        }
+        for volume, path in paths.items():
+            log(f"{LABELS[volume]}: {path}")
+        convert(paths, source_xml, with_english=not args.no_english, with_examples=not args.no_examples)
+        css_path.write_text(CSS, encoding="utf-8")
+        plist_path.write_text(plist(), encoding="utf-8")
+        entries, keys = check_xml(source_xml)
+        log(f"valid XML: {entries} entries, {keys} search keys")
+
+    if "compile" in args.steps:
+        print("[2/2] Compiling with the Dictionary Development Kit")
+        if sys.platform != "darwin":
+            sys.exit("compiling requires macOS (the DDK binaries).")
+        if not source_xml.exists():
+            sys.exit(f"{source_xml} is missing: run the « convert » step first.")
+        bundle = compile_dictionary(get_ddk(work, args.ddk), work, source_xml, css_path, plist_path)
+        target = Path.home() / "Library" / "Dictionaries"
+        print("\nDictionary built:")
+        print(f"    {bundle}")
+        print("\nOver to you: move that bundle into")
+        print(f"    {target}")
+        print("then open Dictionary.app → Dictionary menu → Settings,")
+        print(f"and tick « {DISPLAY_NAME} ».")
+
+
+if __name__ == "__main__":
+    main()

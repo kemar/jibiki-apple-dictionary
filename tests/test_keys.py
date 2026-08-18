@@ -1,0 +1,114 @@
+"""
+Tests of the search keys: what makes an entry findable.
+"""
+
+from __future__ import annotations
+
+import html
+import re
+import unittest
+
+from context import document, jd
+
+
+def keys_of(xml: str, title: str) -> list[str]:
+    """
+    The index values of the first entry bearing that title.
+
+    Values are unescaped: in the file, the apostrophe of han'i is written &#x27;.
+    """
+    entry = re.search(rf'<d:entry [^>]*d:title="{re.escape(title)}".*?</d:entry>', xml, re.S)
+    assert entry, f"entry not found: {title}"
+    return [html.unescape(value) for value in re.findall(r'<d:index d:value="([^"]*)"', entry.group(0))]
+
+
+class SyllabicN(unittest.TestCase):
+    """
+    ん before a vowel or y, written four ways depending on the convention.
+    """
+
+    def test_four_spellings(self):
+        variants = jd.extra_keys("han.i", romaji=True)
+        self.assertEqual(set(variants), {"hani", "han'i", "han’i", "han-i"})
+
+    def test_bare_form_only_before_a_consonant(self):
+        """
+        kon.nyaku: the dot separates two consonants, no Hepburn apostrophe.
+        """
+        self.assertEqual(jd.extra_keys("kon.nyaku", romaji=True), ["konnyaku"])
+
+    def test_latin_abbreviations_spared(self):
+        """
+        The corpus holds Ph.D. or Inc. treated as headwords.
+        """
+        for abbreviation in ("Ph.D.", "Q.E.D.", "Inc."):
+            with self.subTest(abbreviation=abbreviation):
+                variants = jd.extra_keys(abbreviation, romaji=True)
+                self.assertFalse(any("'" in v or "’" in v for v in variants))
+
+
+class Romaji(unittest.TestCase):
+    def test_macrons_and_separators_dropped(self):
+        self.assertIn("betakaroten", jd.extra_keys("bēta・karoten", romaji=True))
+        self.assertIn("soi", jd.extra_keys("sō-i", romaji=True))
+
+    def test_macron_alone(self):
+        self.assertEqual(jd.extra_keys("kyōto", romaji=True), ["kyoto"])
+
+
+class French(unittest.TestCase):
+    def test_accents_doubled(self):
+        self.assertEqual(jd.extra_keys("périphrase"), ["periphrase"])
+
+    def test_hyphens_kept(self):
+        """
+        « a-coup » has no business becoming « acoup ».
+        """
+        self.assertEqual(jd.extra_keys("a-coup"), [])
+
+
+class EntryKeys(unittest.TestCase):
+    """
+    End-to-end checks on real entries from the sample.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.jpn = document("jpn_fra")
+        cls.fra = document("fra_jpn")
+
+    def test_japanese_entry_findable_in_all_three_scripts(self):
+        keys = keys_of(self.jpn, "臨む")
+        for expected in ("臨む", "のぞむ", "nozomu"):
+            self.assertIn(expected, keys)
+
+    def test_syllabic_n_in_a_real_entry(self):
+        keys = keys_of(self.jpn, "範囲")
+        for expected in ("範囲", "はんい", "han.i", "hani", "han'i", "han-i"):
+            self.assertIn(expected, keys)
+
+    def test_feminine_indexed(self):
+        self.assertIn("bonne", keys_of(self.fra, "bon"))
+
+    def test_kana_reading_carried_by_japanese_keys(self):
+        """
+        d:yomi drives the application's Japanese alphabetical ordering.
+        """
+        entry = re.search(r'<d:entry [^>]*d:title="臨む".*?</d:entry>', self.jpn, re.S).group(0)
+        self.assertIn('d:value="臨む" d:title="臨む" d:yomi="のぞむ"', entry)
+
+
+class Tags(unittest.TestCase):
+    def test_empty_tag_not_emitted(self):
+        self.assertEqual(jd.tag("ex", ""), "")
+        self.assertEqual(jd.tag("ex", "", ""), "")
+
+    def test_tag_assembles_its_pieces(self):
+        self.assertEqual(
+            jd.tag("hg", jd.tag("hw", "水"), jd.tag("pr", "みず")),
+            '<span class="hg"><span class="hw">水</span><span class="pr">みず</span></span>',
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
