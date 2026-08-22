@@ -4,22 +4,10 @@ Tests of the search keys: what makes an entry findable.
 
 from __future__ import annotations
 
-import html
 import re
 import unittest
 
-from context import document, jd
-
-
-def keys_of(xml: str, title: str) -> list[str]:
-    """
-    The index values of the first entry bearing that title.
-
-    Values are unescaped: in the file, the apostrophe of han'i is written &#x27;.
-    """
-    entry = re.search(rf'<d:entry [^>]*d:title="{re.escape(title)}".*?</d:entry>', xml, re.S)
-    assert entry, f"entry not found: {title}"
-    return [html.unescape(value) for value in re.findall(r'<d:index d:value="([^"]*)"', entry.group(0))]
+from context import document, jd, keys_of
 
 
 class SyllabicN(unittest.TestCase):

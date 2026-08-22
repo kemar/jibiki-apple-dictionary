@@ -7,7 +7,9 @@ be moved without touching the tests.
 
 from __future__ import annotations
 
+import html
 import importlib.util
+import re
 import sys
 from pathlib import Path
 
@@ -49,3 +51,14 @@ def document(volume: str, **options: bool) -> str:
     The complete XML for a sample, ready to be compared or parsed.
     """
     return jd.HEADER + "\n".join(entries(volume, **options)) + "\n</d:dictionary>\n"
+
+
+def keys_of(xml: str, title: str) -> list[str]:
+    """
+    The index values of the first entry bearing that title.
+
+    Values are unescaped: in the file, the apostrophe of han'i is written &#x27;.
+    """
+    entry = re.search(rf'<d:entry [^>]*d:title="{re.escape(title)}".*?</d:entry>', xml, re.S)
+    assert entry, f"entry not found: {title}"
+    return [html.unescape(value) for value in re.findall(r'<d:index d:value="([^"]*)"', entry.group(0))]
