@@ -277,9 +277,10 @@ class VerbForms(unittest.TestCase):
         for word, kana in (("問う", "とう"), ("請う", "こう"), ("事問う", "こととう")):
             with self.subTest(word=word):
                 forms = jd.verb_forms(word, kana, "godan")
-                self.assertEqual(forms["te"][0], word[:-1] + "うて")
-                self.assertEqual(forms["ta"][1], kana[:-1] + "うた")
-                self.assertEqual(forms["tara"][1], kana[:-1] + "うたら")
+                # The onbin form is the dictionary form itself plus て/た.
+                self.assertEqual(forms["te"], (word + "て", kana + "て"))
+                self.assertEqual(forms["ta"], (word + "た", kana + "た"))
+                self.assertEqual(forms["tara"], (word + "たら", kana + "たら"))
         # An ordinary う-verb is untouched, even one ending in a こう sound.
         self.assertEqual(jd.verb_forms("迷う", "まよう", "godan")["te"], ("迷って", "まよって"))
 

@@ -530,8 +530,14 @@ def godan_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
         return {}
     word_stem, kana_stem = word[:-1], kana[:-1]
     neg_stem, pol_stem, pot_stem, vol_stem, te, ta = row
+    # 行く and its compounds take って/った (行って, never 行いて). Under the
+    # ゆく reading, those forms also switch the reading to い (連れて行って is
+    # つれていって, never ゆって or ゆいて); every other form keeps its ゆ.
+    onbin_kana_stem = kana_stem
     if word.endswith("行く") and kana.endswith(("いく", "ゆく")):
         te, ta = "って", "った"
+        if kana.endswith("ゆく"):
+            onbin_kana_stem = kana[:-2] + "い"
     if word.endswith(U_ONBIN_VERBS):
         te, ta = "うて", "うた"
     # いらっしゃる/おっしゃる/くださる/なさる/ござる: い replaces り in the
@@ -547,8 +553,8 @@ def godan_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
         "masu_past": (word_stem + pol_stem + "ました", kana_stem + pol_stem + "ました"),
         "masu_neg": (word_stem + pol_stem + "ません", kana_stem + pol_stem + "ません"),
         "masu_neg_past": (word_stem + pol_stem + "ませんでした", kana_stem + pol_stem + "ませんでした"),
-        "te": (word_stem + te, kana_stem + te),
-        "ta": (word_stem + ta, kana_stem + ta),
+        "te": (word_stem + te, onbin_kana_stem + te),
+        "ta": (word_stem + ta, onbin_kana_stem + ta),
         "nai": (word_stem + neg_stem + "ない", kana_stem + neg_stem + "ない"),
         "nai_past": (word_stem + neg_stem + "なかった", kana_stem + neg_stem + "なかった"),
         "te_neg": (word_stem + neg_stem + "なくて", kana_stem + neg_stem + "なくて"),
@@ -558,15 +564,8 @@ def godan_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
         "causative": (word_stem + neg_stem + "せる", kana_stem + neg_stem + "せる"),
         "conditional": (word_stem + pot_stem + "ば", kana_stem + pot_stem + "ば"),
         "imperative": (word_stem + imperative, kana_stem + imperative),
-        "tara": (word_stem + ta + "ら", kana_stem + ta + "ら"),
+        "tara": (word_stem + ta + "ら", onbin_kana_stem + ta + "ら"),
     }
-    # 行く read ゆく (暮れ行く, 連れて行く...): the って/った forms switch
-    # the reading to い (連れて行って is つれていって), never ゆって/ゆいて.
-    if word.endswith("行く") and kana.endswith("ゆく"):
-        stem_i = kana[:-2] + "い"
-        forms["te"] = (forms["te"][0], stem_i + "って")
-        forms["ta"] = (forms["ta"][0], stem_i + "った")
-        forms["tara"] = (forms["tara"][0], stem_i + "ったら")
     # ある is negated by the suppletive ない/なかった, never あらない: a
     # one-word exception, corrected after the fact rather than threaded
     # through the table above.
