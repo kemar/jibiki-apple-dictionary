@@ -453,12 +453,12 @@ class AdjectiveForms(unittest.TestCase):
         間がいい, 気持ちよい, かっこいい...: compounds of 良い conjugate on
         よ like the bare adjective (間がよくない, never 間がいくない).
         """
-        cases = {
-            ("間がいい", "まがいい"): ("間がよくない", "まがよくない"),
-            ("気持ちよい", "きもちよい"): ("気持ちよくない", "きもちよくない"),
-            ("エロかっこいい", "えろかっこいい"): ("エロかっこよくない", "えろかっこよくない"),
-        }
-        for (word, kana), expected in cases.items():
+        cases = (
+            ("間がいい", "まがいい", ("間がよくない", "まがよくない")),
+            ("気持ちよい", "きもちよい", ("気持ちよくない", "きもちよくない")),
+            ("エロかっこいい", "えろかっこいい", ("エロかっこよくない", "えろかっこよくない")),
+        )
+        for word, kana, expected in cases:
             with self.subTest(word=word):
                 self.assertEqual(jd.adjective_forms(word, kana)["neg"], expected)
 

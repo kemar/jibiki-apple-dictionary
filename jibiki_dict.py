@@ -611,6 +611,13 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
     return forms
 
 
+# Adjectives ending in いい that owe nothing to 良い: they conjugate on their
+# own い (かわいくない, never かわよくない). Unlike the opt-in lists above,
+# where a miss merely generates nothing, a miss here would generate wrong
+# forms — this list is load-bearing, not best-effort.
+YOI_LOOKALIKES = ("かわいい",)
+
+
 def adjective_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
     """
     Inflected (kanji, kana) pairs for an i-adjective (高い, 良い...).
@@ -622,7 +629,7 @@ def adjective_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
     """
     if not word or not kana:
         return {}
-    if kana.endswith(("いい", "よい")) and word.endswith("い") and not kana.endswith("かわいい"):
+    if kana.endswith(("いい", "よい")) and word.endswith("い") and not kana.endswith(YOI_LOOKALIKES):
         word_stem = word[:-2] + "よ" if word.endswith("いい") else word[:-1]
         kana_stem = kana[:-2] + "よ"
     elif word.endswith("い") and kana.endswith("い"):
