@@ -428,8 +428,8 @@ def classify_verb(kanji: str, kana: str) -> str | None:
         # verb (which their literal -ずる ending would otherwise suggest).
         return "zuru"
     if kanji.endswith("来る") and kana.endswith("くる"):
-        # 来る and its compounds (持って来る, 迫り来る...): the compound
-        # conjugates exactly like its 来る tail, prefix carried along.
+        # Both spelling and reading must match: 来る read きたる is a
+        # regular godan verb.
         return "kuru"
     last = kana[-1]
     if last == "る":
