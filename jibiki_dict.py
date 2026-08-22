@@ -584,6 +584,26 @@ VERB_FORM_BUILDERS = {
     "godan": godan_verb_forms,
 }
 
+# Voice-changing endings from ichidan_verb_forms, dropped when that table is
+# reused to conjugate an already-inflected passive/causative-passive form:
+# 話されられる and 話されよう aren't real Japanese, but 話されました and
+# 話されたら are.
+ICHIDAN_VOICE_ENDINGS = frozenset(
+    ("potential", "potential_casual", "volitional", "passive", "causative", "imperative")
+)
+
+
+def ichidan_tense_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
+    """
+    Tense/polarity forms (られました, られたら...) for an auxiliary that
+    itself conjugates as ichidan (られる, される), by reusing
+    ichidan_verb_forms and dropping the endings that don't stack on a form
+    already inflected for voice.
+    """
+    return {
+        label: form for label, form in ichidan_verb_forms(word, kana).items() if label not in ICHIDAN_VOICE_ENDINGS
+    }
+
 
 def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
     """
@@ -594,13 +614,25 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
     same in the headword and its reading. That holds for every regular verb
     (食べる/たべる both end in べる) and is checked again here as a safety net.
 
-    Two more forms are added on top, the same way for every class, so they
-    live here rather than in each builder:
+    Several more forms are added on top, the same way for every class, so
+    they live here rather than in each builder:
 
     - the prohibitive (禁止形): the dictionary form itself plus な (見るな,
       するな) — no stem needed, so no class-specific rule either.
     - the polite imperative (〜なさい): built off the ます-stem, i.e. the
       masu form with its ます trailing suffix swapped for なさい.
+    - the passive's own tense/polarity paradigm (話しかけられた, not just the
+      dictionary-form 話しかけられる already in "passive"): られる conjugates
+      as ichidan regardless of the base verb's own class.
+    - the causative-passive (読ませられる), built from "causative" since
+      every class's causative form ends in せる/させる, ichidan-conjugable
+      the same way as られる, plus its own tense/polarity paradigm
+      (読ませられました).
+    - for godan verbs other than す-row ones, the causative-passive's
+      contraction (せられる → される: 買わされる, not 買わせられる) and that
+      form's paradigm (買わされました). す-row verbs (話す) keep only the
+      uncontracted causative-passive (話させられる): the contraction doesn't
+      apply to them.
     """
     forms = VERB_FORM_BUILDERS[klass](word, kana)
     if not forms:
@@ -608,6 +640,25 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
     forms["prohibitive"] = (word + "な", kana + "な")
     masu_word, masu_kana = forms["masu"]
     forms["imperative_polite"] = (masu_word[:-2] + "なさい", masu_kana[:-2] + "なさい")
+
+    passive_word, passive_kana = forms["passive"]
+    for label, form in ichidan_tense_forms(passive_word, passive_kana).items():
+        forms[f"passive_{label}"] = form
+
+    causative_word, causative_kana = forms["causative"]
+    cp_word, cp_kana = causative_word[:-1] + "られる", causative_kana[:-1] + "られる"
+    forms["causative_passive"] = (cp_word, cp_kana)
+    for label, form in ichidan_tense_forms(cp_word, cp_kana).items():
+        forms[f"causative_passive_{label}"] = form
+
+    if klass == "godan" and kana[-1] != "す":
+        neg_stem = GODAN_ROWS[kana[-1]][0]
+        ccp_word = word[:-1] + neg_stem + "される"
+        ccp_kana = kana[:-1] + neg_stem + "される"
+        forms["causative_passive_contracted"] = (ccp_word, ccp_kana)
+        for label, form in ichidan_tense_forms(ccp_word, ccp_kana).items():
+            forms[f"causative_passive_contracted_{label}"] = form
+
     return forms
 
 

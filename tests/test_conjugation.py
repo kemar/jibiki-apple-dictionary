@@ -143,6 +143,11 @@ class VerbClassification(unittest.TestCase):
 
 class VerbForms(unittest.TestCase):
     def test_godan_full_paradigm(self):
+        """
+        話す is す-row, so no causative_passive_contracted here (話さされる is
+        not real Japanese) — see test_causative_passive_contraction below for
+        a row that does contract.
+        """
         forms = jd.verb_forms("話す", "はなす", "godan")
         expected = {
             "masu": ("話します", "はなします"),
@@ -163,6 +168,29 @@ class VerbForms(unittest.TestCase):
             "tara": ("話したら", "はなしたら"),
             "prohibitive": ("話すな", "はなすな"),
             "imperative_polite": ("話しなさい", "はなしなさい"),
+            "passive_masu": ("話されます", "はなされます"),
+            "passive_masu_past": ("話されました", "はなされました"),
+            "passive_masu_neg": ("話されません", "はなされません"),
+            "passive_masu_neg_past": ("話されませんでした", "はなされませんでした"),
+            "passive_te": ("話されて", "はなされて"),
+            "passive_ta": ("話された", "はなされた"),
+            "passive_nai": ("話されない", "はなされない"),
+            "passive_nai_past": ("話されなかった", "はなされなかった"),
+            "passive_te_neg": ("話されなくて", "はなされなくて"),
+            "passive_conditional": ("話されれば", "はなされれば"),
+            "passive_tara": ("話されたら", "はなされたら"),
+            "causative_passive": ("話させられる", "はなさせられる"),
+            "causative_passive_masu": ("話させられます", "はなさせられます"),
+            "causative_passive_masu_past": ("話させられました", "はなさせられました"),
+            "causative_passive_masu_neg": ("話させられません", "はなさせられません"),
+            "causative_passive_masu_neg_past": ("話させられませんでした", "はなさせられませんでした"),
+            "causative_passive_te": ("話させられて", "はなさせられて"),
+            "causative_passive_ta": ("話させられた", "はなさせられた"),
+            "causative_passive_nai": ("話させられない", "はなさせられない"),
+            "causative_passive_nai_past": ("話させられなかった", "はなさせられなかった"),
+            "causative_passive_te_neg": ("話させられなくて", "はなさせられなくて"),
+            "causative_passive_conditional": ("話させられれば", "はなさせられれば"),
+            "causative_passive_tara": ("話させられたら", "はなさせられたら"),
         }
         self.assertEqual(forms, expected)
 
@@ -200,6 +228,29 @@ class VerbForms(unittest.TestCase):
             "tara": ("食べたら", "たべたら"),
             "prohibitive": ("食べるな", "たべるな"),
             "imperative_polite": ("食べなさい", "たべなさい"),
+            "passive_masu": ("食べられます", "たべられます"),
+            "passive_masu_past": ("食べられました", "たべられました"),
+            "passive_masu_neg": ("食べられません", "たべられません"),
+            "passive_masu_neg_past": ("食べられませんでした", "たべられませんでした"),
+            "passive_te": ("食べられて", "たべられて"),
+            "passive_ta": ("食べられた", "たべられた"),
+            "passive_nai": ("食べられない", "たべられない"),
+            "passive_nai_past": ("食べられなかった", "たべられなかった"),
+            "passive_te_neg": ("食べられなくて", "たべられなくて"),
+            "passive_conditional": ("食べられれば", "たべられれば"),
+            "passive_tara": ("食べられたら", "たべられたら"),
+            "causative_passive": ("食べさせられる", "たべさせられる"),
+            "causative_passive_masu": ("食べさせられます", "たべさせられます"),
+            "causative_passive_masu_past": ("食べさせられました", "たべさせられました"),
+            "causative_passive_masu_neg": ("食べさせられません", "たべさせられません"),
+            "causative_passive_masu_neg_past": ("食べさせられませんでした", "たべさせられませんでした"),
+            "causative_passive_te": ("食べさせられて", "たべさせられて"),
+            "causative_passive_ta": ("食べさせられた", "たべさせられた"),
+            "causative_passive_nai": ("食べさせられない", "たべさせられない"),
+            "causative_passive_nai_past": ("食べさせられなかった", "たべさせられなかった"),
+            "causative_passive_te_neg": ("食べさせられなくて", "たべさせられなくて"),
+            "causative_passive_conditional": ("食べさせられれば", "たべさせられれば"),
+            "causative_passive_tara": ("食べさせられたら", "たべさせられたら"),
         }
         self.assertEqual(forms, expected)
 
@@ -224,6 +275,29 @@ class VerbForms(unittest.TestCase):
             "tara": ("勉強したら", "べんきょうしたら"),
             "prohibitive": ("勉強するな", "べんきょうするな"),
             "imperative_polite": ("勉強しなさい", "べんきょうしなさい"),
+            "passive_masu": ("勉強されます", "べんきょうされます"),
+            "passive_masu_past": ("勉強されました", "べんきょうされました"),
+            "passive_masu_neg": ("勉強されません", "べんきょうされません"),
+            "passive_masu_neg_past": ("勉強されませんでした", "べんきょうされませんでした"),
+            "passive_te": ("勉強されて", "べんきょうされて"),
+            "passive_ta": ("勉強された", "べんきょうされた"),
+            "passive_nai": ("勉強されない", "べんきょうされない"),
+            "passive_nai_past": ("勉強されなかった", "べんきょうされなかった"),
+            "passive_te_neg": ("勉強されなくて", "べんきょうされなくて"),
+            "passive_conditional": ("勉強されれば", "べんきょうされれば"),
+            "passive_tara": ("勉強されたら", "べんきょうされたら"),
+            "causative_passive": ("勉強させられる", "べんきょうさせられる"),
+            "causative_passive_masu": ("勉強させられます", "べんきょうさせられます"),
+            "causative_passive_masu_past": ("勉強させられました", "べんきょうさせられました"),
+            "causative_passive_masu_neg": ("勉強させられません", "べんきょうさせられません"),
+            "causative_passive_masu_neg_past": ("勉強させられませんでした", "べんきょうさせられませんでした"),
+            "causative_passive_te": ("勉強させられて", "べんきょうさせられて"),
+            "causative_passive_ta": ("勉強させられた", "べんきょうさせられた"),
+            "causative_passive_nai": ("勉強させられない", "べんきょうさせられない"),
+            "causative_passive_nai_past": ("勉強させられなかった", "べんきょうさせられなかった"),
+            "causative_passive_te_neg": ("勉強させられなくて", "べんきょうさせられなくて"),
+            "causative_passive_conditional": ("勉強させられれば", "べんきょうさせられれば"),
+            "causative_passive_tara": ("勉強させられたら", "べんきょうさせられたら"),
         }
         self.assertEqual(forms, expected)
 
@@ -253,6 +327,29 @@ class VerbForms(unittest.TestCase):
             "tara": ("来たら", "きたら"),
             "prohibitive": ("来るな", "くるな"),
             "imperative_polite": ("来なさい", "きなさい"),
+            "passive_masu": ("来られます", "こられます"),
+            "passive_masu_past": ("来られました", "こられました"),
+            "passive_masu_neg": ("来られません", "こられません"),
+            "passive_masu_neg_past": ("来られませんでした", "こられませんでした"),
+            "passive_te": ("来られて", "こられて"),
+            "passive_ta": ("来られた", "こられた"),
+            "passive_nai": ("来られない", "こられない"),
+            "passive_nai_past": ("来られなかった", "こられなかった"),
+            "passive_te_neg": ("来られなくて", "こられなくて"),
+            "passive_conditional": ("来られれば", "こられれば"),
+            "passive_tara": ("来られたら", "こられたら"),
+            "causative_passive": ("来させられる", "こさせられる"),
+            "causative_passive_masu": ("来させられます", "こさせられます"),
+            "causative_passive_masu_past": ("来させられました", "こさせられました"),
+            "causative_passive_masu_neg": ("来させられません", "こさせられません"),
+            "causative_passive_masu_neg_past": ("来させられませんでした", "こさせられませんでした"),
+            "causative_passive_te": ("来させられて", "こさせられて"),
+            "causative_passive_ta": ("来させられた", "こさせられた"),
+            "causative_passive_nai": ("来させられない", "こさせられない"),
+            "causative_passive_nai_past": ("来させられなかった", "こさせられなかった"),
+            "causative_passive_te_neg": ("来させられなくて", "こさせられなくて"),
+            "causative_passive_conditional": ("来させられれば", "こさせられれば"),
+            "causative_passive_tara": ("来させられたら", "こさせられたら"),
         }
         self.assertEqual(forms, expected)
 
@@ -369,6 +466,19 @@ class VerbForms(unittest.TestCase):
         self.assertEqual(jd.verb_forms("来る", "くる", "kuru")["potential_casual"], ("来れる", "これる"))
         self.assertNotIn("potential_casual", jd.verb_forms("話す", "はなす", "godan"))
         self.assertNotIn("potential_casual", jd.verb_forms("する", "する", "suru"))
+
+    def test_causative_passive_contraction(self):
+        """
+        買わせられる contracts to 買わされる for most godan verbs, and both
+        further conjugate as ichidan (買わされました). す-row verbs (話す) are
+        the one exception: 話さされる isn't real Japanese, so only the
+        uncontracted 話させられる is generated.
+        """
+        forms = jd.verb_forms("買う", "かう", "godan")
+        self.assertEqual(forms["causative_passive"], ("買わせられる", "かわせられる"))
+        self.assertEqual(forms["causative_passive_contracted"], ("買わされる", "かわされる"))
+        self.assertEqual(forms["causative_passive_contracted_masu_past"], ("買わされました", "かわされました"))
+        self.assertNotIn("causative_passive_contracted", jd.verb_forms("話す", "はなす", "godan"))
 
     def test_te_neg_across_every_class(self):
         """
