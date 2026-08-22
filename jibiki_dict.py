@@ -617,12 +617,15 @@ def adjective_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
     Inflected (kanji, kana) pairs for an i-adjective (高い, 良い...).
 
     良い/いい is the one common irregular: every inflected form is built on the
-    よ stem (よくない, よかった), never on い- or 良-.
+    よ stem (よくない, よかった), never on い- or 良-. Its compounds (間がいい,
+    気持ちよい, かっこいい...) inherit that stem — except the 可愛い family,
+    which genuinely conjugates on its own い (かわいくない, never かわよくない).
     """
     if not word or not kana:
         return {}
-    if kana in ("いい", "よい") and word.endswith("い"):
-        word_stem, kana_stem = ("よ" if word == "いい" else word[:-1]), "よ"
+    if kana.endswith(("いい", "よい")) and word.endswith("い") and not kana.endswith("かわいい"):
+        word_stem = word[:-2] + "よ" if word.endswith("いい") else word[:-1]
+        kana_stem = kana[:-2] + "よ"
     elif word.endswith("い") and kana.endswith("い"):
         word_stem, kana_stem = word[:-1], kana[:-1]
     else:

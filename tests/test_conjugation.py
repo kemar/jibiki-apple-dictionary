@@ -447,6 +447,29 @@ class AdjectiveForms(unittest.TestCase):
                 kanji_stem = "よ" if word == "いい" else word[:-1]
                 self.assertEqual(forms["neg"][0], kanji_stem + "くない")
 
+    def test_yoi_compounds_inherit_the_yo_stem(self):
+        """
+        間がいい, 気持ちよい, かっこいい...: compounds of 良い conjugate on
+        よ like the bare adjective (間がよくない, never 間がいくない).
+        """
+        cases = {
+            ("間がいい", "まがいい"): ("間がよくない", "まがよくない"),
+            ("気持ちよい", "きもちよい"): ("気持ちよくない", "きもちよくない"),
+            ("エロかっこいい", "えろかっこいい"): ("エロかっこよくない", "えろかっこよくない"),
+        }
+        for (word, kana), expected in cases.items():
+            with self.subTest(word=word):
+                self.assertEqual(jd.adjective_forms(word, kana)["neg"], expected)
+
+    def test_kawaii_is_not_a_yoi_compound(self):
+        """
+        可愛い ends in いい but owes nothing to 良い: it conjugates on its own
+        い (かわいくない), and so do its derivatives (ブサ可愛い).
+        """
+        self.assertEqual(jd.adjective_forms("可愛い", "かわいい")["neg"], ("可愛くない", "かわいくない"))
+        forms = jd.adjective_forms("ブサ可愛い", "ぶさかわいい")
+        self.assertEqual(forms["past"], ("ブサ可愛かった", "ぶさかわいかった"))
+
     def test_non_adjective_yields_nothing(self):
         self.assertEqual(jd.adjective_forms("水", "みず"), {})
         self.assertEqual(jd.adjective_forms("", ""), {})
