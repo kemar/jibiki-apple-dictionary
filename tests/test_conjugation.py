@@ -145,6 +145,8 @@ class VerbForms(unittest.TestCase):
             "conditional": ("話せば", "はなせば"),
             "imperative": ("話せ", "はなせ"),
             "tara": ("話したら", "はなしたら"),
+            "prohibitive": ("話すな", "はなすな"),
+            "imperative_polite": ("話しなさい", "はなしなさい"),
         }
         self.assertEqual(forms, expected)
 
@@ -180,6 +182,8 @@ class VerbForms(unittest.TestCase):
             "conditional": ("食べれば", "たべれば"),
             "imperative": ("食べろ", "たべろ"),
             "tara": ("食べたら", "たべたら"),
+            "prohibitive": ("食べるな", "たべるな"),
+            "imperative_polite": ("食べなさい", "たべなさい"),
         }
         self.assertEqual(forms, expected)
 
@@ -202,6 +206,8 @@ class VerbForms(unittest.TestCase):
             "conditional": ("勉強すれば", "べんきょうすれば"),
             "imperative": ("勉強しろ", "べんきょうしろ"),
             "tara": ("勉強したら", "べんきょうしたら"),
+            "prohibitive": ("勉強するな", "べんきょうするな"),
+            "imperative_polite": ("勉強しなさい", "べんきょうしなさい"),
         }
         self.assertEqual(forms, expected)
 
@@ -229,6 +235,8 @@ class VerbForms(unittest.TestCase):
             "conditional": ("来れば", "くれば"),
             "imperative": ("来い", "こい"),
             "tara": ("来たら", "きたら"),
+            "prohibitive": ("来るな", "くるな"),
+            "imperative_polite": ("来なさい", "きなさい"),
         }
         self.assertEqual(forms, expected)
 
@@ -316,6 +324,42 @@ class VerbForms(unittest.TestCase):
         self.assertEqual(jd.verb_forms("する", "する", "suru")["te_neg"], ("しなくて", "しなくて"))
         self.assertEqual(jd.verb_forms("来る", "くる", "kuru")["te_neg"], ("来なくて", "こなくて"))
         self.assertEqual(jd.verb_forms("論ずる", "ろんずる", "zuru")["te_neg"], ("論じなくて", "ろんじなくて"))
+
+    def test_prohibitive_across_every_class(self):
+        """
+        な (the prohibitive: 見るな, "don't look"): the dictionary form as
+        written, plus な — no stem, so no class-specific rule either.
+        """
+        self.assertEqual(jd.verb_forms("見る", "みる", "ichidan")["prohibitive"], ("見るな", "みるな"))
+        self.assertEqual(jd.verb_forms("話す", "はなす", "godan")["prohibitive"], ("話すな", "はなすな"))
+        self.assertEqual(jd.verb_forms("する", "する", "suru")["prohibitive"], ("するな", "するな"))
+        self.assertEqual(jd.verb_forms("来る", "くる", "kuru")["prohibitive"], ("来るな", "くるな"))
+        self.assertEqual(jd.verb_forms("論ずる", "ろんずる", "zuru")["prohibitive"], ("論ずるな", "ろんずるな"))
+
+    def test_polite_imperative_across_every_class(self):
+        """
+        なさい (the polite imperative: 食べなさい): built off the ます-stem,
+        the same one every class already computes for its masu form.
+        """
+        cases = {
+            ("食べる", "たべる", "ichidan"): ("食べなさい", "たべなさい"),
+            ("話す", "はなす", "godan"): ("話しなさい", "はなしなさい"),
+            ("する", "する", "suru"): ("しなさい", "しなさい"),
+            ("来る", "くる", "kuru"): ("来なさい", "きなさい"),
+            ("論ずる", "ろんずる", "zuru"): ("論じなさい", "ろんじなさい"),
+        }
+        for (word, kana, klass), expected in cases.items():
+            with self.subTest(word=word):
+                self.assertEqual(jd.verb_forms(word, kana, klass)["imperative_polite"], expected)
+
+    def test_prohibitive_and_polite_imperative_absent_when_unclassified(self):
+        """
+        verb_forms returns {} untouched when the class-specific builder
+        already bailed out (mismatched stem, unrecognised ending...): the
+        two forms added centrally must not force a KeyError on a missing
+        "masu" entry.
+        """
+        self.assertEqual(jd.verb_forms("話す", "たべる", "ichidan"), {})
 
 
 class AdjectiveForms(unittest.TestCase):

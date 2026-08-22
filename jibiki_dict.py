@@ -570,8 +570,22 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
     verb's final kana character — which requires that character to be the
     same in the headword and its reading. That holds for every regular verb
     (食べる/たべる both end in べる) and is checked again here as a safety net.
+
+    Two more forms are added on top, the same way for every class, so they
+    live here rather than in each builder:
+
+    - the prohibitive (禁止形): the dictionary form itself plus な (見るな,
+      するな) — no stem needed, so no class-specific rule either.
+    - the polite imperative (〜なさい): built off the ます-stem, i.e. the
+      masu form with its ます trailing suffix swapped for なさい.
     """
-    return VERB_FORM_BUILDERS[klass](word, kana)
+    forms = VERB_FORM_BUILDERS[klass](word, kana)
+    if not forms:
+        return forms
+    forms["prohibitive"] = (word + "な", kana + "な")
+    masu_word, masu_kana = forms["masu"]
+    forms["imperative_polite"] = (masu_word[:-2] + "なさい", masu_kana[:-2] + "なさい")
+    return forms
 
 
 def adjective_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
