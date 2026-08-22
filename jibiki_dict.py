@@ -530,7 +530,7 @@ def godan_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
         return {}
     word_stem, kana_stem = word[:-1], kana[:-1]
     neg_stem, pol_stem, pot_stem, vol_stem, te, ta = row
-    if word.endswith("行く") and kana.endswith("いく"):
+    if word.endswith("行く") and kana.endswith(("いく", "ゆく")):
         te, ta = "って", "った"
     if word.endswith(U_ONBIN_VERBS):
         te, ta = "うて", "うた"
@@ -560,6 +560,13 @@ def godan_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
         "imperative": (word_stem + imperative, kana_stem + imperative),
         "tara": (word_stem + ta + "ら", kana_stem + ta + "ら"),
     }
+    # 行く read ゆく (暮れ行く, 連れて行く...): the って/った forms switch
+    # the reading to い (連れて行って is つれていって), never ゆって/ゆいて.
+    if word.endswith("行く") and kana.endswith("ゆく"):
+        stem_i = kana[:-2] + "い"
+        forms["te"] = (forms["te"][0], stem_i + "って")
+        forms["ta"] = (forms["ta"][0], stem_i + "った")
+        forms["tara"] = (forms["tara"][0], stem_i + "ったら")
     # ある is negated by the suppletive ない/なかった, never あらない: a
     # one-word exception, corrected after the fact rather than threaded
     # through the table above.

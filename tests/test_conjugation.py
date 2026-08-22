@@ -283,6 +283,18 @@ class VerbForms(unittest.TestCase):
         # An ordinary う-verb is untouched, even one ending in a こう sound.
         self.assertEqual(jd.verb_forms("迷う", "まよう", "godan")["te"], ("迷って", "まよって"))
 
+    def test_iku_read_yuku_switches_its_onbin_reading_to_i(self):
+        """
+        連れて行く read つれてゆく: the って/った forms are written with 行
+        but read with い (つれていって), never ゆって or the regular ゆいて.
+        The other forms keep the ゆ reading (つれてゆきます).
+        """
+        forms = jd.verb_forms("連れて行く", "つれてゆく", "godan")
+        self.assertEqual(forms["te"], ("連れて行って", "つれていって"))
+        self.assertEqual(forms["ta"], ("連れて行った", "つれていった"))
+        self.assertEqual(forms["tara"], ("連れて行ったら", "つれていったら"))
+        self.assertEqual(forms["masu"], ("連れて行きます", "つれてゆきます"))
+
     def test_ichidan_potential_and_passive_share_their_form(self):
         """
         食べられる is genuinely ambiguous between potential and passive in
