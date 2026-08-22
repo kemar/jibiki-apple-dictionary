@@ -621,6 +621,13 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
       するな) — no stem needed, so no class-specific rule either.
     - the polite imperative (〜なさい): built off the ます-stem, i.e. the
       masu form with its ます trailing suffix swapped for なさい.
+    - the potential's own tense/polarity paradigm (話せなかった, 食べられません,
+      not just the dictionary-form already in "potential"): every class's
+      potential ends in an ichidan-shaped る (godan's in an e-row mora, the
+      others in られる/できる), so it conjugates the same way られる does.
+    - the causative's own tense/polarity paradigm (読ませました, 買わせた),
+      built the same way: causative always ends in せる/させる, ichidan-shaped
+      too.
     - the passive's own tense/polarity paradigm (話しかけられた, not just the
       dictionary-form 話しかけられる already in "passive"): られる conjugates
       as ichidan regardless of the base verb's own class.
@@ -641,11 +648,18 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
     masu_word, masu_kana = forms["masu"]
     forms["imperative_polite"] = (masu_word[:-2] + "なさい", masu_kana[:-2] + "なさい")
 
+    potential_word, potential_kana = forms["potential"]
+    for label, form in ichidan_tense_forms(potential_word, potential_kana).items():
+        forms[f"potential_{label}"] = form
+
     passive_word, passive_kana = forms["passive"]
     for label, form in ichidan_tense_forms(passive_word, passive_kana).items():
         forms[f"passive_{label}"] = form
 
     causative_word, causative_kana = forms["causative"]
+    for label, form in ichidan_tense_forms(causative_word, causative_kana).items():
+        forms[f"causative_{label}"] = form
+
     cp_word, cp_kana = causative_word[:-1] + "られる", causative_kana[:-1] + "られる"
     forms["causative_passive"] = (cp_word, cp_kana)
     for label, form in ichidan_tense_forms(cp_word, cp_kana).items():
