@@ -110,6 +110,15 @@ class Layout(unittest.TestCase):
             with self.subTest(entry=entry[:60]):
                 self.assertEqual(numbers, senses if senses > 1 else 0)
 
+    def test_kana_only_headword_not_repeated(self):
+        """
+        A headword with no kanji (ああいう) shows once: no reading span
+        echoing it, no « Autres formes » listing the headword itself.
+        """
+        group = jd.jpn_headword_group([("", "ああいう", "aaiu", ""), ("", "ああいう", "aaiu", "")])
+        self.assertNotIn('class="pr"', group)
+        self.assertNotIn("Autres formes", group)
+
     def test_english_glosses_flagged(self):
         """
         JMdict entries without a French translation carry a badge.

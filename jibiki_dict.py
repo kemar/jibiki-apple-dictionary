@@ -687,11 +687,12 @@ def jpn_headword_group(forms: list[tuple[str, str, str, str]]) -> str:
     The heading line: headword, kana reading, rōmaji, competing spellings.
     """
     jp, kana, romaji, shown = forms[0]
-    others = [other for other in dict.fromkeys(j or k for j, k, _, _ in forms[1:]) if other and other != jp]
+    headword = jp or kana
+    others = [other for other in dict.fromkeys(j or k for j, k, _, _ in forms[1:]) if other and other != headword]
     return tag(
         "hg x_xh0",
-        tag("hw", esc(jp or kana)),
-        tag("pr", esc(kana)) if kana != jp else "",
+        tag("hw", esc(headword)),
+        tag("pr", esc(kana)) if kana != headword else "",
         tag("prx", esc(shown or romaji)),
         tag("hgSub1", "Autres formes : " + esc("、".join(others)) if others else ""),
     )
