@@ -421,7 +421,9 @@ def classify_verb(kanji: str, kana: str) -> str | None:
         # for -じる verbs, conjugating like する rather than as a plain godan
         # verb (which their literal -ずる ending would otherwise suggest).
         return "zuru"
-    if kanji == "来る" and kana == "くる":
+    if kanji.endswith("来る") and kana.endswith("くる"):
+        # 来る and its compounds (持って来る, 迫り来る...): the compound
+        # conjugates exactly like its 来る tail, prefix carried along.
         return "kuru"
     last = kana[-1]
     if last == "る":
@@ -476,9 +478,15 @@ def zuru_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
 
 
 def kuru_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
-    if word != "来る" or kana != "くる":
+    """
+    来る and its compounds (持って来る, 迫り来る...): the reading changes with
+    the form (来ます kimasu, 来ない konai), so the paradigm is hardcoded and
+    the compound's prefix carried over.
+    """
+    if not (word.endswith("来る") and kana.endswith("くる")):
         return {}
-    return {
+    prefix, kana_prefix = word[:-2], kana[:-2]
+    endings = {
         "masu": ("来ます", "きます"), "masu_past": ("来ました", "きました"),
         "masu_neg": ("来ません", "きません"), "masu_neg_past": ("来ませんでした", "きませんでした"),
         "te": ("来て", "きて"), "ta": ("来た", "きた"),
@@ -489,6 +497,7 @@ def kuru_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
         "passive": ("来られる", "こられる"), "causative": ("来させる", "こさせる"),
         "conditional": ("来れば", "くれば"), "imperative": ("来い", "こい"), "tara": ("来たら", "きたら"),
     }  # fmt: skip
+    return {label: (prefix + w, kana_prefix + k) for label, (w, k) in endings.items()}
 
 
 def ichidan_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:

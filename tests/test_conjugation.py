@@ -105,6 +105,22 @@ class VerbClassification(unittest.TestCase):
         self.assertEqual(jd.classify_verb("勉強する", "べんきょうする"), "suru")
         self.assertEqual(jd.classify_verb("来る", "くる"), "kuru")
 
+    def test_kuru_compounds_conjugate_like_kuru(self):
+        """
+        持って来る follows 来る (持って来ます, not a godan 持って来ります):
+        the compound inherits its tail's irregular class, as する compounds do.
+        """
+        for word, kana in (("持って来る", "もってくる"), ("連れて来る", "つれてくる"), ("迫り来る", "せまりくる")):
+            with self.subTest(word=word):
+                self.assertEqual(jd.classify_verb(word, kana), "kuru")
+
+    def test_kitaru_spelling_of_kuru_stays_godan(self):
+        """
+        来る read きたる is a different, regular godan verb (来ります): the
+        来る-compound rule must key on both the spelling and the reading.
+        """
+        self.assertEqual(jd.classify_verb("来る", "きたる"), "godan")
+
     def test_zuru(self):
         """
         論ずる/命ずる/感ずる...: end in ずる, which would otherwise fall
@@ -239,6 +255,18 @@ class VerbForms(unittest.TestCase):
             "imperative_polite": ("来なさい", "きなさい"),
         }
         self.assertEqual(forms, expected)
+
+    def test_kuru_compound_carries_its_prefix_through_the_paradigm(self):
+        """
+        持って来る keeps 来る's changing readings, prefix in tow: 持って来て is
+        もってきて, 持って来ない is もってこない.
+        """
+        forms = jd.verb_forms("持って来る", "もってくる", "kuru")
+        self.assertEqual(forms["te"], ("持って来て", "もってきて"))
+        self.assertEqual(forms["nai"], ("持って来ない", "もってこない"))
+        self.assertEqual(forms["masu"], ("持って来ます", "もってきます"))
+        self.assertEqual(forms["conditional"], ("持って来れば", "もってくれば"))
+        self.assertEqual(forms["imperative_polite"], ("持って来なさい", "もってきなさい"))
 
     def test_ichidan_potential_and_passive_share_their_form(self):
         """
