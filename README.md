@@ -81,6 +81,7 @@ python3 jibiki_dict.py --steps convert                                      # St
 python3 jibiki_dict.py --steps compile                                      # Resume at the compilation.
 python3 jibiki_dict.py --no-examples                                        # Without the examples.
 python3 jibiki_dict.py --no-english                                         # Drop JMdict's English only.
+python3 jibiki_dict.py --no-conjugations                                    # Skip the inflected forms, faster compile.
 python3 jibiki_dict.py --work-dir ~/dict                                    # Another work folder.
 python3 jibiki_dict.py --ddk "~/Dictionary Development Kit"                 # DDK already installed.
 python3 jibiki_dict.py --jpn-fra ~/tmp/a.xml.gz --fra-jpn ~/tmp/b.xml.gz
@@ -99,6 +100,8 @@ Without `--jpn-fra` / `--fra-jpn`, both volumes are looked for in the current fo
     - they are flagged with an `en` badge
     - `--no-english` drops them
 - verbs and i-adjectives are searchable in their inflected forms too (行って finds 行く, 食べよう finds 食べる)
+    - this adds roughly 230 000 search keys, which is the main thing to blame for a slow compilation
+    - `--no-conjugations` drops them, for a noticeably faster build while iterating
 - in the French → Japanese volume:
     - the original Raguet‑Martin convention is kept as it stands: Japanese is written in rōmaji with the kanji as ruby annotations
 

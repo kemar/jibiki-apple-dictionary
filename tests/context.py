@@ -31,14 +31,16 @@ def sample(volume: str) -> Path:
     return FOLDER / f"sample_{volume}.xml"
 
 
-def entries(volume: str, with_english: bool = True, with_examples: bool = True) -> list[str]:
+def entries(
+    volume: str, with_english: bool = True, with_examples: bool = True, with_conjugations: bool = True
+) -> list[str]:
     """
     The entries produced for a sample, in file order.
     """
     produced = []
     for rank, article in enumerate(jd.articles(sample(volume)), 1):
         if volume == "jpn_fra":
-            built = jd.jpn_fra_entry(article, f"jf{rank}", with_english, with_examples)
+            built = jd.jpn_fra_entry(article, f"jf{rank}", with_english, with_examples, with_conjugations)
         else:
             built = jd.fra_jpn_entry(article, f"fj{rank}")
         if built:

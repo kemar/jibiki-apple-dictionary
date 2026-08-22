@@ -153,7 +153,7 @@ class Stylesheet(unittest.TestCase):
 
 class Options(unittest.TestCase):
     """
-    How the two command-line switches behave.
+    How the command-line switches behave.
     """
 
     def test_no_english_drops_the_entries_it_empties(self):
@@ -169,6 +169,17 @@ class Options(unittest.TestCase):
         without = "\n".join(entries("jpn_fra", with_examples=False))
         self.assertNotIn("x_xoLblBlk", without)
         self.assertIn('<span class="semb', without)  # the senses remain
+
+    def test_no_conjugations_drops_the_extra_keys(self):
+        """
+        --no-conjugations is the escape hatch for a faster compilation: it
+        should shrink the key count without touching entries or their count.
+        """
+        with_conjugations = entries("jpn_fra")
+        without = entries("jpn_fra", with_conjugations=False)
+        self.assertEqual(len(without), len(with_conjugations))
+        self.assertLess(sum(e.count("<d:index") for e in without), sum(e.count("<d:index") for e in with_conjugations))
+        self.assertNotIn("臨んで", "\n".join(without))
 
 
 if __name__ == "__main__":

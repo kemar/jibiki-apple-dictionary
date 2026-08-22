@@ -722,13 +722,15 @@ def jpn_examples(article: ET.Element) -> tuple[str, int]:
     return (tag("x_xo0", tag("x_xoLblBlk", "exemples"), "".join(examples)), len(examples))
 
 
-def jpn_fra_entry(article: ET.Element, eid: str, with_english: bool, with_examples: bool) -> str | None:
+def jpn_fra_entry(
+    article: ET.Element, eid: str, with_english: bool, with_examples: bool, with_conjugations: bool = True
+) -> str | None:
     forms = jpn_headwords(article)
     if not forms:
         return None
     title = forms[0][0] or forms[0][1] or forms[0][2]
 
-    category = article_category(article)
+    category = article_category(article) if with_conjugations else None
     keys = Keys(title)
     for jp, kana, romaji, shown in forms:
         keys.add(jp, kana)
@@ -827,14 +829,16 @@ FRONT_MATTER = (
 )
 
 
-def convert(paths: dict[str, Path], output: Path, with_english: bool, with_examples: bool) -> int:
+def convert(
+    paths: dict[str, Path], output: Path, with_english: bool, with_examples: bool, with_conjugations: bool = True
+) -> int:
     start = time.time()
     total = 0
     with open(output, "w", encoding="utf-8") as f:
         f.write(HEADER)
         f.write(FRONT_MATTER)
         volumes = (
-            ("jpn_fra", lambda art, n: jpn_fra_entry(art, f"jf{n}", with_english, with_examples)),
+            ("jpn_fra", lambda art, n: jpn_fra_entry(art, f"jf{n}", with_english, with_examples, with_conjugations)),
             ("fra_jpn", lambda art, n: fra_jpn_entry(art, f"fj{n}")),
         )
         for volume, build in volumes:
@@ -1138,6 +1142,11 @@ def main() -> None:
     p.add_argument("--no-english", action="store_true", help="drop the English senses inherited from JMdict")
     p.add_argument("--no-examples", action="store_true", help="leave the examples out (lighter dictionary)")
     p.add_argument(
+        "--no-conjugations",
+        action="store_true",
+        help="drop the generated verb/adjective inflections (fewer search keys, faster compilation)",
+    )
+    p.add_argument(
         "--ddk",
         type=Path,
         help="use an already installed Dictionary Development Kit "
@@ -1163,7 +1172,13 @@ def main() -> None:
         }
         for volume, path in paths.items():
             log(f"{LABELS[volume]}: {path}")
-        convert(paths, source_xml, with_english=not args.no_english, with_examples=not args.no_examples)
+        convert(
+            paths,
+            source_xml,
+            with_english=not args.no_english,
+            with_examples=not args.no_examples,
+            with_conjugations=not args.no_conjugations,
+        )
         css_path.write_text(CSS, encoding="utf-8")
         plist_path.write_text(plist(), encoding="utf-8")
         entries, keys = check_xml(source_xml)
