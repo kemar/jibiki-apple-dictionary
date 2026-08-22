@@ -342,6 +342,288 @@ SENSE_LABELS = (
 )
 
 
+# ---- Conjugated forms (Japanese verbs and i-adjectives) -------------------
+#
+# The source only gives the dictionary form (辞書形). A reader who meets 行って
+# or 知って in the wild has no way to look them up unless the inflected forms
+# are indexed too, pointing at the same entry as 行う or 知る. Apple's format
+# has no morphological analyser to fall back on, so the inflected forms are
+# generated ahead of time and added as extra search keys.
+#
+# Classifying a verb ending in -iru/-eru as godan or ichidan cannot be done
+# from spelling alone (帰る is godan, 食べる is ichidan, both end in -eru):
+# GODAN_RU_EXCEPTIONS lists the common godan verbs that look ichidan. It is a
+# curated, not exhaustive, list — false negatives just mean a rarer verb's
+# inflected forms are not generated, which is no worse than today.
+
+GODAN_RU_KANJI_EXCEPTIONS = frozenset(
+    (
+        "入る", "要る", "切る", "知る", "走る", "参る", "限る", "帰る", "返る", "蹴る",
+        "減る", "茂る", "滑る", "喋る", "焦る", "陰る", "湿る", "練る", "照る", "覆る",
+        "耽る", "遮る", "翻る", "罷る", "蘇る", "甦る", "交じる", "混じる", "齧る",
+        "捩る", "罵る", "弄る", "陥る", "巫山戯る", "詰る", "散る", "握る",
+    )
+)  # fmt: skip
+
+# Headwords with no kanji field at all (かじる, ののしる...) cannot use the
+# suffix match above — a bare kana suffix would also catch unrelated ichidan
+# verbs that happen to end the same way (落ちる ends in ちる too, but is
+# ichidan). Matched by full equality instead, only when there is no kanji.
+GODAN_RU_KANA_EXCEPTIONS = frozenset(
+    (
+        "はいる", "いる", "きる", "しる", "はしる", "まいる", "かぎる", "かえる", "ける",
+        "へる", "しげる", "すべる", "しゃべる", "あせる", "かげる", "しめる", "ねる", "てる",
+        "くつがえる", "ふける", "さえぎる", "ひるがえる", "まかる", "よみがえる", "まじる",
+        "かじる", "ねじる", "ののしる", "いじる", "おちいる", "ふざける", "なじる", "ちる",
+        "にぎる",
+    )
+)  # fmt: skip
+
+# い-row and え-row hiragana: the only moras that make a る-ending verb
+# ambiguous between ichidan and godan (食べる vs 帰る). Any other row (当たる,
+# 通る, 曲がる...) is unambiguously godan and never needs the exception list.
+ICHIDAN_LOOKALIKE_ROWS = frozenset("いきぎしじちぢにひびぴみりえけげせぜてでねへべぺめれ")
+
+# The five polite/honorific godan verbs whose ます-stem and imperative are
+# irregular (いらっしゃいます, not いらっしゃります; いらっしゃい, not
+# いらっしゃれ). Everything else about them — て/た, ない — is regular godan.
+HONORIFIC_GODAN_KANA = frozenset(("いらっしゃる", "おっしゃる", "くださる", "なさる", "ござる"))
+
+# Final kana of a godan verb → its five other vowel-row moras (あ/い/え/お,
+# stems for the negative, polite, potential and volitional forms), then the
+# て form ending and the た form ending. 行く is the only irregular て/た among
+# these (行って, not 行いて) and is special-cased where the table is used.
+GODAN_ROWS = {
+    "う": ("わ", "い", "え", "お", "って", "った"),
+    "く": ("か", "き", "け", "こ", "いて", "いた"),
+    "ぐ": ("が", "ぎ", "げ", "ご", "いで", "いだ"),
+    "す": ("さ", "し", "せ", "そ", "して", "した"),
+    "つ": ("た", "ち", "て", "と", "って", "った"),
+    "ぬ": ("な", "に", "ね", "の", "んで", "んだ"),
+    "ぶ": ("ば", "び", "べ", "ぼ", "んで", "んだ"),
+    "む": ("ま", "み", "め", "も", "んで", "んだ"),
+    "る": ("ら", "り", "れ", "ろ", "って", "った"),
+}
+
+
+def classify_verb(kanji: str, kana: str) -> str | None:
+    """
+    "godan", "ichidan", "suru", "kuru" or "zuru" — or None when the reading
+    gives no reliable answer (not a verb, or an ending outside the table).
+    `kanji` is the headword as written, empty when it carries no kanji at all.
+    """
+    if not kana:
+        return None
+    if kana.endswith("する"):
+        return "suru"
+    if kana.endswith("ずる"):
+        # 論ずる/命ずる/感ずる...: a small, closed set of alternate spellings
+        # for -じる verbs, conjugating like する rather than as a plain godan
+        # verb (which their literal -ずる ending would otherwise suggest).
+        return "zuru"
+    if kanji == "来る" and kana == "くる":
+        return "kuru"
+    last = kana[-1]
+    if last == "る":
+        # A suffix match, not exact equality: compounds of an exception verb
+        # (見切る, 立ち入る, 持ち帰る...) inherit its conjugation, as they do
+        # in actual Japanese. Kana-only headwords fall back to exact equality
+        # against GODAN_RU_KANA_EXCEPTIONS (see its docstring for why).
+        if kanji:
+            if any(kanji.endswith(exception) for exception in GODAN_RU_KANJI_EXCEPTIONS):
+                return "godan"
+        elif kana in GODAN_RU_KANA_EXCEPTIONS:
+            return "godan"
+        # Only an i-row or e-row mora right before the final る makes the verb
+        # ambiguous (食べる vs 帰る): あ/う/お-row endings (当たる, 通る) are
+        # always godan, no exception list needed.
+        if len(kana) >= 2 and kana[-2] in ICHIDAN_LOOKALIKE_ROWS:
+            return "ichidan"
+        return "godan"
+    return "godan" if last in GODAN_ROWS else None
+
+
+def suru_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
+    if not (word.endswith("する") and kana.endswith("する")):
+        return {}
+    word_stem, kana_stem = word[:-2], kana[:-2]
+    endings = {
+        "masu": "します", "masu_past": "しました", "masu_neg": "しません", "masu_neg_past": "しませんでした",
+        "te": "して", "ta": "した", "nai": "しない", "nai_past": "しなかった", "te_neg": "しなくて",
+        "potential": "できる", "volitional": "しよう", "passive": "される", "causative": "させる",
+        "conditional": "すれば", "imperative": "しろ", "tara": "したら",
+    }  # fmt: skip
+    return {label: (word_stem + suffix, kana_stem + suffix) for label, suffix in endings.items()}
+
+
+def zuru_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
+    """
+    論ずる/命ずる/感ずる...: conjugates like する, but with じ where する uses
+    し (論じます, not 論します), except the ば-conditional and the dictionary
+    form itself, which keep the ず (論ずれば, not 論じれば) — the same split
+    する itself has between し (renyoukei) and す (everywhere else).
+    """
+    if not (word.endswith("ずる") and kana.endswith("ずる")):
+        return {}
+    word_stem, kana_stem = word[:-2], kana[:-2]
+    endings = {
+        "masu": "じます", "masu_past": "じました", "masu_neg": "じません", "masu_neg_past": "じませんでした",
+        "te": "じて", "ta": "じた", "nai": "じない", "nai_past": "じなかった", "te_neg": "じなくて",
+        "potential": "じられる", "volitional": "じよう", "passive": "じられる", "causative": "じさせる",
+        "conditional": "ずれば", "imperative": "じろ", "tara": "じたら",
+    }  # fmt: skip
+    return {label: (word_stem + suffix, kana_stem + suffix) for label, suffix in endings.items()}
+
+
+def kuru_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
+    if word != "来る" or kana != "くる":
+        return {}
+    return {
+        "masu": ("来ます", "きます"), "masu_past": ("来ました", "きました"),
+        "masu_neg": ("来ません", "きません"), "masu_neg_past": ("来ませんでした", "きませんでした"),
+        "te": ("来て", "きて"), "ta": ("来た", "きた"),
+        "nai": ("来ない", "こない"), "nai_past": ("来なかった", "こなかった"), "te_neg": ("来なくて", "こなくて"),
+        "potential": ("来られる", "こられる"), "volitional": ("来よう", "こよう"),
+        # 来れる: the colloquial ら抜き potential, alongside the standard 来られる.
+        "potential_casual": ("来れる", "これる"),
+        "passive": ("来られる", "こられる"), "causative": ("来させる", "こさせる"),
+        "conditional": ("来れば", "くれば"), "imperative": ("来い", "こい"), "tara": ("来たら", "きたら"),
+    }  # fmt: skip
+
+
+def ichidan_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
+    if not word or not kana or word[-1] != kana[-1] or kana[-1] != "る":
+        return {}
+    word_stem, kana_stem = word[:-1], kana[:-1]
+    endings = {
+        "masu": "ます", "masu_past": "ました", "masu_neg": "ません", "masu_neg_past": "ませんでした",
+        "te": "て", "ta": "た", "nai": "ない", "nai_past": "なかった", "te_neg": "なくて",
+        "potential": "られる", "volitional": "よう", "passive": "られる", "causative": "させる",
+        # れる: the colloquial ら抜き potential (食べれる), everyday enough in
+        # real text to be worth a search key of its own, alongside 食べられる.
+        "potential_casual": "れる",
+        "conditional": "れば", "imperative": "ろ", "tara": "たら",
+    }  # fmt: skip
+    return {label: (word_stem + suffix, kana_stem + suffix) for label, suffix in endings.items()}
+
+
+def godan_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
+    if not word or not kana or word[-1] != kana[-1]:
+        return {}
+    row = GODAN_ROWS.get(kana[-1])
+    if row is None:
+        return {}
+    word_stem, kana_stem = word[:-1], kana[:-1]
+    neg_stem, pol_stem, pot_stem, vol_stem, te, ta = row
+    if word.endswith("行く") and kana.endswith("いく"):
+        te, ta = "って", "った"
+    # いらっしゃる/おっしゃる/くださる/なさる/ござる: い replaces り in the
+    # ます-stem and stands alone as the imperative, instead of the regular
+    # り/れ pattern every other godan る-verb follows.
+    if kana in HONORIFIC_GODAN_KANA:
+        pol_stem = "い"
+        imperative = "い"
+    else:
+        imperative = pot_stem
+    forms = {
+        "masu": (word_stem + pol_stem + "ます", kana_stem + pol_stem + "ます"),
+        "masu_past": (word_stem + pol_stem + "ました", kana_stem + pol_stem + "ました"),
+        "masu_neg": (word_stem + pol_stem + "ません", kana_stem + pol_stem + "ません"),
+        "masu_neg_past": (word_stem + pol_stem + "ませんでした", kana_stem + pol_stem + "ませんでした"),
+        "te": (word_stem + te, kana_stem + te),
+        "ta": (word_stem + ta, kana_stem + ta),
+        "nai": (word_stem + neg_stem + "ない", kana_stem + neg_stem + "ない"),
+        "nai_past": (word_stem + neg_stem + "なかった", kana_stem + neg_stem + "なかった"),
+        "te_neg": (word_stem + neg_stem + "なくて", kana_stem + neg_stem + "なくて"),
+        "potential": (word_stem + pot_stem + "る", kana_stem + pot_stem + "る"),
+        "volitional": (word_stem + vol_stem + "う", kana_stem + vol_stem + "う"),
+        "passive": (word_stem + neg_stem + "れる", kana_stem + neg_stem + "れる"),
+        "causative": (word_stem + neg_stem + "せる", kana_stem + neg_stem + "せる"),
+        "conditional": (word_stem + pot_stem + "ば", kana_stem + pot_stem + "ば"),
+        "imperative": (word_stem + imperative, kana_stem + imperative),
+        "tara": (word_stem + ta + "ら", kana_stem + ta + "ら"),
+    }
+    # ある is negated by the suppletive ない/なかった, never あらない: a
+    # one-word exception, corrected after the fact rather than threaded
+    # through the table above.
+    if kana == "ある":
+        forms["nai"] = ("ない", "ない")
+        forms["nai_past"] = ("なかった", "なかった")
+        forms["te_neg"] = ("なくて", "なくて")
+    return forms
+
+
+VERB_FORM_BUILDERS = {
+    "suru": suru_verb_forms,
+    "zuru": zuru_verb_forms,
+    "kuru": kuru_verb_forms,
+    "ichidan": ichidan_verb_forms,
+    "godan": godan_verb_forms,
+}
+
+
+def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
+    """
+    Inflected (kanji, kana) pairs for a verb already classified by classify_verb.
+
+    Beyond the irregulars, both forms share a stem obtained by dropping the
+    verb's final kana character — which requires that character to be the
+    same in the headword and its reading. That holds for every regular verb
+    (食べる/たべる both end in べる) and is checked again here as a safety net.
+    """
+    return VERB_FORM_BUILDERS[klass](word, kana)
+
+
+def adjective_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
+    """
+    Inflected (kanji, kana) pairs for an i-adjective (高い, 良い...).
+
+    良い/いい is the one common irregular: every inflected form is built on the
+    よ stem (よくない, よかった), never on い- or 良-.
+    """
+    if not word or not kana:
+        return {}
+    if kana in ("いい", "よい") and word.endswith("い"):
+        word_stem, kana_stem = ("よ" if word == "いい" else word[:-1]), "よ"
+    elif word.endswith("い") and kana.endswith("い"):
+        word_stem, kana_stem = word[:-1], kana[:-1]
+    else:
+        return {}
+    endings = {
+        "neg": "くない", "past": "かった", "neg_past": "くなかった", "te": "くて",
+        "conditional": "ければ", "tara": "かったら", "presumptive": "かろう", "te_neg": "くなくて",
+    }  # fmt: skip
+    return {label: (word_stem + suffix, kana_stem + suffix) for label, suffix in endings.items()}
+
+
+def article_category(article: ET.Element) -> str | None:
+    """
+    "verb", "i_adj", or None — from the part-of-speech labels of the article's
+    sense blocks. 助動 (auxiliary verb) is left out: those inflect too, but as
+    a closed, irregular list not worth chasing.
+    """
+    categories = {plain(block.find("étiquettes/gram")) for block in article.findall("sémantique/bloc-gram")}
+    if any(label.startswith(("動", "他動", "自動")) for label in categories):
+        return "verb"
+    if "形 adjectif" in categories:
+        return "i_adj"
+    return None
+
+
+def inflected_keys(kanji: str, kana: str, category: str | None) -> list[tuple[str, str]]:
+    """
+    The (kanji, kana) pairs to index in addition to the dictionary form.
+    """
+    if not kana or not category:
+        return []
+    if category == "verb":
+        klass = classify_verb(kanji, kana)
+        return list(verb_forms(kanji or kana, kana, klass).values()) if klass else []
+    if category == "i_adj":
+        return list(adjective_forms(kanji or kana, kana).values())
+    return []
+
+
 # ---- Japanese → French volume --------------------------------------------
 
 
@@ -446,6 +728,7 @@ def jpn_fra_entry(article: ET.Element, eid: str, with_english: bool, with_exampl
         return None
     title = forms[0][0] or forms[0][1] or forms[0][2]
 
+    category = article_category(article)
     keys = Keys(title)
     for jp, kana, romaji, shown in forms:
         keys.add(jp, kana)
@@ -453,6 +736,10 @@ def jpn_fra_entry(article: ET.Element, eid: str, with_english: bool, with_exampl
         for reading in (romaji, shown):
             if reading:
                 keys.add_with_variants(reading, romaji=True)
+        for inflected_word, inflected_kana in inflected_keys(jp, kana, category):
+            keys.add(inflected_word, inflected_kana)
+            if inflected_word != inflected_kana:
+                keys.add(inflected_kana, inflected_kana)
     if not keys:
         return None
 

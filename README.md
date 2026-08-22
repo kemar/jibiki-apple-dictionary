@@ -98,6 +98,7 @@ Without `--jpn-fra` / `--fra-jpn`, both volumes are looked for in the current fo
 - some 41 000 entries only carry an English gloss (JMdict entries with no French translation)
     - they are flagged with an `en` badge
     - `--no-english` drops them
+- verbs and i-adjectives are searchable in their inflected forms too (行って finds 行く, 食べよう finds 食べる)
 - in the French → Japanese volume:
     - the original Raguet‑Martin convention is kept as it stands: Japanese is written in rōmaji with the kanji as ruby annotations
 
