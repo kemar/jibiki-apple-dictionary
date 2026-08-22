@@ -268,6 +268,21 @@ class VerbForms(unittest.TestCase):
         self.assertEqual(forms["conditional"], ("持って来れば", "もってくれば"))
         self.assertEqual(forms["imperative_polite"], ("持って来なさい", "もってきなさい"))
 
+    def test_u_onbin_verbs_keep_the_classical_te_ta(self):
+        """
+        問う/請う/恋う... take the う-onbin: 問うて/問うた, never the regular
+        う-row 問って/問った. Their compounds (事問う) inherit it, and every
+        other form stays regular godan (問います, 問わない).
+        """
+        for word, kana in (("問う", "とう"), ("請う", "こう"), ("事問う", "こととう")):
+            with self.subTest(word=word):
+                forms = jd.verb_forms(word, kana, "godan")
+                self.assertEqual(forms["te"][0], word[:-1] + "うて")
+                self.assertEqual(forms["ta"][1], kana[:-1] + "うた")
+                self.assertEqual(forms["tara"][1], kana[:-1] + "うたら")
+        # An ordinary う-verb is untouched, even one ending in a こう sound.
+        self.assertEqual(jd.verb_forms("迷う", "まよう", "godan")["te"], ("迷って", "まよって"))
+
     def test_ichidan_potential_and_passive_share_their_form(self):
         """
         食べられる is genuinely ambiguous between potential and passive in

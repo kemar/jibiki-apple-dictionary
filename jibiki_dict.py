@@ -389,10 +389,16 @@ ICHIDAN_LOOKALIKE_ROWS = frozenset("いきぎしじちぢにひびぴみりえ�
 # いらっしゃれ). Everything else about them — て/た, ない — is regular godan.
 HONORIFIC_GODAN_KANA = frozenset(("いらっしゃる", "おっしゃる", "くださる", "なさる", "ござる"))
 
+# The う-ending verbs keeping the classical う-onbin: 問うて/問うた, never the
+# regular う-row 問って/問った. Their compounds (事問う) inherit it. Matched on
+# the written form, like 行く below.
+U_ONBIN_VERBS = ("問う", "請う", "乞う", "恋う", "厭う", "訪う")
+
 # Final kana of a godan verb → its five other vowel-row moras (あ/い/え/お,
 # stems for the negative, polite, potential and volitional forms), then the
-# て form ending and the た form ending. 行く is the only irregular て/た among
-# these (行って, not 行いて) and is special-cased where the table is used.
+# て form ending and the た form ending. 行く (行って, not 行いて) and the
+# う-onbin verbs above are the irregular て/た among these, special-cased
+# where the table is used.
 GODAN_ROWS = {
     "う": ("わ", "い", "え", "お", "って", "った"),
     "く": ("か", "き", "け", "こ", "いて", "いた"),
@@ -526,6 +532,8 @@ def godan_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
     neg_stem, pol_stem, pot_stem, vol_stem, te, ta = row
     if word.endswith("行く") and kana.endswith("いく"):
         te, ta = "って", "った"
+    if word.endswith(U_ONBIN_VERBS):
+        te, ta = "うて", "うた"
     # いらっしゃる/おっしゃる/くださる/なさる/ござる: い replaces り in the
     # ます-stem and stands alone as the imperative, instead of the regular
     # り/れ pattern every other godan る-verb follows.
