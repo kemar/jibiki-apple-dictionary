@@ -605,6 +605,17 @@ def ichidan_tense_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
     }
 
 
+def merge_paradigm(forms: dict[str, tuple[str, str]], prefix: str, word: str, kana: str) -> None:
+    """
+    Adds prefix_<label> to forms for every tense/polarity form of the
+    compound (word, kana) — an auxiliary-derived form (passive,
+    causative-passive, progressive...) that itself keeps conjugating as
+    ichidan, the way られる/せる-shaped auxiliaries do.
+    """
+    for label, form in ichidan_tense_forms(word, kana).items():
+        forms[f"{prefix}_{label}"] = form
+
+
 def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
     """
     Inflected (kanji, kana) pairs for a verb already classified by classify_verb.
@@ -640,6 +651,11 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
       form's paradigm (買わされました). す-row verbs (話す) keep only the
       uncontracted causative-passive (話させられる): the contraction doesn't
       apply to them.
+    - the progressive (食べている), built as て-form + いる — ichidan-shaped
+      again, so it gets the same tense/polarity paradigm (食べていません,
+      食べていた), plus the い抜き casual contraction (食べてる, common enough
+      in real text to index, mirroring the ら抜き potential_casual below) and
+      that contraction's own paradigm (食べてた, 食べてない).
     """
     forms = VERB_FORM_BUILDERS[klass](word, kana)
     if not forms:
@@ -648,30 +664,34 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
     masu_word, masu_kana = forms["masu"]
     forms["imperative_polite"] = (masu_word[:-2] + "なさい", masu_kana[:-2] + "なさい")
 
+    te_word, te_kana = forms["te"]
+    progressive_word, progressive_kana = te_word + "いる", te_kana + "いる"
+    forms["progressive"] = (progressive_word, progressive_kana)
+    merge_paradigm(forms, "progressive", progressive_word, progressive_kana)
+
+    progressive_casual_word, progressive_casual_kana = te_word + "る", te_kana + "る"
+    forms["progressive_casual"] = (progressive_casual_word, progressive_casual_kana)
+    merge_paradigm(forms, "progressive_casual", progressive_casual_word, progressive_casual_kana)
+
     potential_word, potential_kana = forms["potential"]
-    for label, form in ichidan_tense_forms(potential_word, potential_kana).items():
-        forms[f"potential_{label}"] = form
+    merge_paradigm(forms, "potential", potential_word, potential_kana)
 
     passive_word, passive_kana = forms["passive"]
-    for label, form in ichidan_tense_forms(passive_word, passive_kana).items():
-        forms[f"passive_{label}"] = form
+    merge_paradigm(forms, "passive", passive_word, passive_kana)
 
     causative_word, causative_kana = forms["causative"]
-    for label, form in ichidan_tense_forms(causative_word, causative_kana).items():
-        forms[f"causative_{label}"] = form
+    merge_paradigm(forms, "causative", causative_word, causative_kana)
 
     cp_word, cp_kana = causative_word[:-1] + "られる", causative_kana[:-1] + "られる"
     forms["causative_passive"] = (cp_word, cp_kana)
-    for label, form in ichidan_tense_forms(cp_word, cp_kana).items():
-        forms[f"causative_passive_{label}"] = form
+    merge_paradigm(forms, "causative_passive", cp_word, cp_kana)
 
     if klass == "godan" and kana[-1] != "す":
         neg_stem = GODAN_ROWS[kana[-1]][0]
         ccp_word = word[:-1] + neg_stem + "される"
         ccp_kana = kana[:-1] + neg_stem + "される"
         forms["causative_passive_contracted"] = (ccp_word, ccp_kana)
-        for label, form in ichidan_tense_forms(ccp_word, ccp_kana).items():
-            forms[f"causative_passive_contracted_{label}"] = form
+        merge_paradigm(forms, "causative_passive_contracted", ccp_word, ccp_kana)
 
     return forms
 
