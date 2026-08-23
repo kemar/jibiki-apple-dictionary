@@ -85,6 +85,19 @@ class EntryKeys(unittest.TestCase):
         entry = re.search(r'<d:entry [^>]*d:title="臨む".*?</d:entry>', self.jpn, re.S).group(0)
         self.assertIn('d:value="臨む" d:title="臨む" d:yomi="のぞむ"', entry)
 
+    def test_inflected_forms_keep_the_entrys_own_yomi(self):
+        """
+        Every key of an entry carries the *entry's* reading (のぞむ), not each
+        inflected form's own (臨みます would otherwise get のぞみます). Dictionary.app
+        groups a search's matches by (title, yomi): give every conjugated form
+        a different yomi and the sidebar lists the same entry once per form
+        instead of once overall — see 見上げ/見上げました in the project history.
+        """
+        entry = re.search(r'<d:entry [^>]*d:title="臨む".*?</d:entry>', self.jpn, re.S).group(0)
+        self.assertIn('d:value="臨みます" d:title="臨む" d:yomi="のぞむ"', entry)
+        yomis = set(re.findall(r'd:yomi="([^"]*)"', entry))
+        self.assertEqual(yomis, {"のぞむ"})
+
 
 class Tags(unittest.TestCase):
     def test_empty_tag_not_emitted(self):

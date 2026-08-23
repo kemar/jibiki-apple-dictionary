@@ -632,6 +632,15 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
       するな) — no stem needed, so no class-specific rule either.
     - the polite imperative (〜なさい): built off the ます-stem, i.e. the
       masu form with its ます trailing suffix swapped for なさい.
+    - the bare ます-stem itself (連用形: 見上げ, 話し, 食べ...), gotten by
+      dropping that same ます. It is a word in its own right — nominalised
+      (見上げ "the act of looking up") or as the first half of a compound
+      verb (見上げる from 見る + 上げる) — and, unlike every other form here,
+      it is a *prefix* of all the others. Without it as a key of its own,
+      looking up a bare stem finds nothing indexed at that exact string, and
+      Dictionary.app falls back to listing every longer form that happens to
+      start with it (masu, te, ta, nai...) as separate matches instead of
+      the one entry they all belong to.
     - the potential's own tense/polarity paradigm (話せなかった, 食べられません,
       not just the dictionary-form already in "potential"): every class's
       potential ends in an ichidan-shaped る (godan's in an e-row mora, the
@@ -663,6 +672,7 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
     forms["prohibitive"] = (word + "な", kana + "な")
     masu_word, masu_kana = forms["masu"]
     forms["imperative_polite"] = (masu_word[:-2] + "なさい", masu_kana[:-2] + "なさい")
+    forms["stem"] = (masu_word[:-2], masu_kana[:-2])
 
     te_word, te_kana = forms["te"]
     progressive_word, progressive_kana = te_word + "いる", te_kana + "いる"
@@ -872,9 +882,15 @@ def jpn_fra_entry(
             if reading:
                 keys.add_with_variants(reading, romaji=True)
         for inflected_word, inflected_kana in inflected_keys(jp, kana, category):
-            keys.add(inflected_word, inflected_kana)
+            # d:yomi is the entry's own reading, kept constant across every one
+            # of its keys — not each inflected form's own reading. Dictionary.app
+            # groups a search's matches by (title, yomi) in its results list;
+            # giving every conjugated form its own yomi (みあげました, みあげます...)
+            # defeated that grouping, listing the single entry once per form
+            # instead of once overall.
+            keys.add(inflected_word, kana)
             if inflected_word != inflected_kana:
-                keys.add(inflected_kana, inflected_kana)
+                keys.add(inflected_kana, kana)
     if not keys:
         return None
 
