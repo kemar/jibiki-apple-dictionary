@@ -55,7 +55,7 @@ DISPLAY_NAME = "Japonais-Français (Jibiki)"  # Name shown in Dictionary.app.
 
 BUNDLE_ID = "fr.jibiki.dictionnaire.jpn-fra"
 
-VERSION = "1.0"
+VERSION = "1.1"
 
 COPYRIGHT = "Données Jibiki.fr (Mathieu Mangeot-Nagata) — licence CC0, domaine public."
 
@@ -262,7 +262,7 @@ def extra_keys(word: str, romaji: bool = False) -> list[str]:
 # ---- tag factory ---------------------------------------------------------
 
 
-def tag(css_class: str, *contents: str) -> str:
+def tag(css_class: str, *contents: str, element: str = "span") -> str:
     """
     A <span> of the given class, or nothing when its content is empty.
 
@@ -270,7 +270,7 @@ def tag(css_class: str, *contents: str) -> str:
     tests that used to clutter the entry builders.
     """
     inside = "".join(contents)
-    return f'<span class="{css_class}">{inside}</span>' if inside else ""
+    return f'<{element} class="{css_class}">{inside}</{element}>' if inside else ""
 
 
 def labels(el: ET.Element, *paths: str, css_class: str = "lbl") -> str:
@@ -816,6 +816,7 @@ def jpn_headword_group(forms: list[tuple[str, str, str, str]]) -> str:
         tag("pr", esc(kana)) if kana != headword else "",
         tag("prx", esc(shown or romaji)),
         tag("hgSub1", "Autres formes : " + esc("、".join(others)) if others else ""),
+        element="h1",
     )
 
 
@@ -977,7 +978,7 @@ def fra_jpn_entry(article: ET.Element, eid: str) -> str | None:
     if not senses:
         return None
 
-    heading = tag("hg x_xh0", tag("hw", esc(title)), tag("hv", esc(feminine)), tag("hv", esc(variant)))
+    heading = tag("hg x_xh0", tag("hw", esc(title)), tag("hv", esc(feminine)), tag("hv", esc(variant)), element="h1")
     # The part of speech forms a block under the headword, as in the Japanese →
     # French volume: same structure, hence same rendering.
     body = tag("gramb x_xd0", tag("posg x_xdh", tag("pos", esc(FR_POS.get(code, code)))), numbered_senses(senses))
@@ -1068,15 +1069,18 @@ html.apple_client-panel body { margin-top: 0; padding: .3em .6em; }
    group takes the offset instead, except for the first entry displayed. The
    two mechanisms cannot add up, the second rule cancelling the fallback as
    soon as the entry container exists. */
-span.hg { margin-top: 3em; }
+h1.hg { margin-top: 3em; }
 html.apple_client-panel *.entry + *.entry,
-html.apple_client-panel span.hg { margin-top: 1.2em; }
-*.entry span.hg, body > span.hg:first-child,
-html.apple_client-panel *.entry span.hg { margin-top: 0; }
+html.apple_client-panel h1.hg { margin-top: 1.2em; }
+*.entry h1.hg, body > h1.hg:first-child,
+html.apple_client-panel *.entry h1.hg { margin-top: 0; }
 
 /*==== headword group ====*/
 
-span.hg { display: block; margin-bottom: .35em; }
+/* h1 carries the OS's own semantics for a dictionary's headword — reset its
+   user-agent styling (bold, big font, margins) since the spans inside already
+   carry their own sizing. */
+h1.hg { display: block; margin-bottom: .35em; font-size: 100%; font-weight: normal; }
 span.hw { font-size: 170%; font-weight: 600; }
 html.apple_client-panel span.hw { font-size: 130%; }
 span.pr { font-size: 105%; color: -apple-system-secondary-label; margin-left: .45em; }
