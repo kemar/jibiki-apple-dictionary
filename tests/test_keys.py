@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 import unittest
+import xml.etree.ElementTree as ET
 
 from context import document, jd, keys_of
 
@@ -97,6 +98,61 @@ class EntryKeys(unittest.TestCase):
         self.assertIn('d:value="臨みます" d:title="臨む" d:yomi="のぞむ"', entry)
         yomis = set(re.findall(r'd:yomi="([^"]*)"', entry))
         self.assertEqual(yomis, {"のぞむ"})
+
+
+class AlternateSpellingShadowing(unittest.TestCase):
+    """
+    An alternate spelling shared with another, unrelated word's own headword
+    must not be indexed twice. Dictionary.app cannot preview an ambiguous
+    match — it sends the reader to "more" instead of a plain definition. See
+    空腹, listed as another way to write 空き腹, even though it is itself the
+    independent, unrelated word 空腹 (くうふく, "faim").
+    """
+
+    def test_shared_spelling_left_to_its_own_entry(self):
+        alt_form_article = ET.fromstring(
+            '<article id="jpn.空き腹.1"><forme>'
+            '<vedette><vedette-romaji affiche="">sukihara</vedette-romaji>'
+            "<vedette-hiragana>すきはら</vedette-hiragana><vedette-jpn>空き腹</vedette-jpn></vedette>"
+            "<vedette><vedette-romaji/><vedette-hiragana/><vedette-jpn>空腹</vedette-jpn></vedette>"
+            "</forme><sémantique><bloc-gram><étiquettes><domaine/><gram>名 nom</gram></étiquettes>"
+            "<sens><étiquettes-sens><domaine/></étiquettes-sens><texte-sens>Ventre creux.</texte-sens></sens>"
+            "</bloc-gram><exemples/></sémantique></article>"
+        )
+        own_entry_article = ET.fromstring(
+            '<article id="jpn.空腹.2"><forme>'
+            '<vedette><vedette-romaji affiche="">kūfuku</vedette-romaji>'
+            "<vedette-hiragana>くうふく</vedette-hiragana><vedette-jpn>空腹</vedette-jpn></vedette>"
+            "</forme><sémantique><bloc-gram><étiquettes><domaine/><gram>名 nom</gram></étiquettes>"
+            "<sens><étiquettes-sens><domaine/></étiquettes-sens><texte-sens>Faim.</texte-sens></sens>"
+            "</bloc-gram><exemples/></sémantique></article>"
+        )
+        known_titles = {"空き腹", "空腹"}
+
+        alt_entry = jd.jpn_fra_entry(alt_form_article, "e1", True, True, known_titles)
+        own_entry = jd.jpn_fra_entry(own_entry_article, "e2", True, True, known_titles)
+
+        self.assertNotIn('d:value="空腹"', alt_entry)
+        self.assertIn('d:value="空き腹"', alt_entry)
+        self.assertIn('d:value="空腹" d:title="空腹"', own_entry)
+
+    def test_same_word_alternate_spellings_still_all_indexed(self):
+        """
+        いい / 善い / 好い share the same reading and the same article: none of
+        them has an entry of its own elsewhere, so all three stay findable.
+        """
+        article = ET.fromstring(
+            '<article id="jpn.いい.1"><forme>'
+            '<vedette><vedette-romaji affiche="">ii</vedette-romaji>'
+            "<vedette-hiragana>いい</vedette-hiragana><vedette-jpn>いい</vedette-jpn></vedette>"
+            '<vedette><vedette-romaji affiche="">ii</vedette-romaji>'
+            "<vedette-hiragana>いい</vedette-hiragana><vedette-jpn>善い</vedette-jpn></vedette>"
+            "</forme><sémantique><bloc-gram><étiquettes><domaine/><gram>形 adjectif</gram></étiquettes>"
+            "<sens><étiquettes-sens><domaine/></étiquettes-sens><texte-sens>Bon.</texte-sens></sens>"
+            "</bloc-gram><exemples/></sémantique></article>"
+        )
+        entry = jd.jpn_fra_entry(article, "e1", True, True, {"いい"})
+        self.assertIn('d:value="善い"', entry)
 
 
 class Tags(unittest.TestCase):

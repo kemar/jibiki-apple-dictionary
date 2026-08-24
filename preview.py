@@ -95,9 +95,10 @@ def chosen_entries(words: list[str], source: Path | None) -> list[tuple[str, str
         path = (source / f"{volume}.xml.gz") if source else sample(volume)
         if not path.exists():
             sys.exit(f"volume not found: {path}")
+        known_titles = jd.jpn_headword_titles(path) if volume == "jpn_fra" else set()
         for rank, article in enumerate(jd.articles(path), 1):
             if volume == "jpn_fra":
-                entry = jd.jpn_fra_entry(article, f"jf{rank}", True, True)
+                entry = jd.jpn_fra_entry(article, f"jf{rank}", True, True, known_titles)
             else:
                 entry = jd.fra_jpn_entry(article, f"fj{rank}")
             if not entry:

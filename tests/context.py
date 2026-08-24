@@ -38,9 +38,12 @@ def entries(
     The entries produced for a sample, in file order.
     """
     produced = []
+    known_titles = jd.jpn_headword_titles(sample("jpn_fra")) if volume == "jpn_fra" else set()
     for rank, article in enumerate(jd.articles(sample(volume)), 1):
         if volume == "jpn_fra":
-            built = jd.jpn_fra_entry(article, f"jf{rank}", with_english, with_examples, with_conjugations)
+            built = jd.jpn_fra_entry(
+                article, f"jf{rank}", with_english, with_examples, known_titles, with_conjugations
+            )
         else:
             built = jd.fra_jpn_entry(article, f"fj{rank}")
         if built:

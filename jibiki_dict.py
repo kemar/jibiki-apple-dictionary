@@ -783,6 +783,26 @@ def jpn_headwords(article: ET.Element) -> list[tuple[str, str, str, str]]:
     return forms
 
 
+def jpn_headword_titles(path: Path) -> set[str]:
+    """
+    Every article's own headword, across the whole Japanese → French volume.
+
+    Used to keep an article's *alternate* spellings from shadowing a headword
+    that already has its own, independent article: 空腹 is listed as another
+    way to write 空き腹, yet it is itself a distinct, unrelated word (a
+    different reading, a different article). Indexing it under 空き腹 too
+    leaves Dictionary.app with two equally-valid matches for 空腹 and no
+    single one to show a quick definition for — the user gets a bare "more"
+    instead of an inline preview.
+    """
+    titles: set[str] = set()
+    for article in articles(path):
+        forms = jpn_headwords(article)
+        if forms:
+            titles.add(forms[0][0] or forms[0][1] or forms[0][2])
+    return titles
+
+
 def jpn_headword_group(forms: list[tuple[str, str, str, str]]) -> str:
     """
     The heading line: headword, kana reading, rōmaji, competing spellings.
@@ -866,7 +886,12 @@ def jpn_examples(article: ET.Element) -> tuple[str, int]:
 
 
 def jpn_fra_entry(
-    article: ET.Element, eid: str, with_english: bool, with_examples: bool, with_conjugations: bool = True
+    article: ET.Element,
+    eid: str,
+    with_english: bool,
+    with_examples: bool,
+    known_titles: set[str],
+    with_conjugations: bool = True,
 ) -> str | None:
     forms = jpn_headwords(article)
     if not forms:
@@ -875,7 +900,11 @@ def jpn_fra_entry(
 
     category = article_category(article) if with_conjugations else None
     keys = Keys(title)
-    for jp, kana, romaji, shown in forms:
+    for index, (jp, kana, romaji, shown) in enumerate(forms):
+        if index > 0 and (
+            (jp and jp != title and jp in known_titles) or (kana and kana != title and kana in known_titles)
+        ):
+            continue  # this spelling already has its own, unambiguous entry
         keys.add(jp, kana)
         keys.add(kana, kana)
         for reading in (romaji, shown):
@@ -982,12 +1011,19 @@ def convert(
     paths: dict[str, Path], output: Path, with_english: bool, with_examples: bool, with_conjugations: bool = True
 ) -> int:
     start = time.time()
+    log("indexing headwords, to keep alternate spellings from shadowing their own entry")
+    known_titles = jpn_headword_titles(paths["jpn_fra"])
     total = 0
     with open(output, "w", encoding="utf-8") as f:
         f.write(HEADER)
         f.write(FRONT_MATTER)
         volumes = (
-            ("jpn_fra", lambda art, n: jpn_fra_entry(art, f"jf{n}", with_english, with_examples, with_conjugations)),
+            (
+                "jpn_fra",
+                lambda art, n: jpn_fra_entry(
+                    art, f"jf{n}", with_english, with_examples, known_titles, with_conjugations
+                ),
+            ),
             ("fra_jpn", lambda art, n: fra_jpn_entry(art, f"fj{n}")),
         )
         for volume, build in volumes:
