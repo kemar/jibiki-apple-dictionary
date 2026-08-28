@@ -1080,7 +1080,7 @@ html.apple_client-panel *.entry h1.hg { margin-top: 0; }
 /* h1 carries the OS's own semantics for a dictionary's headword — reset its
    user-agent styling (bold, big font, margins) since the spans inside already
    carry their own sizing. */
-h1.hg { display: block; margin-bottom: .35em; font-size: 100%; font-weight: normal; }
+h1.hg { display: block; margin-bottom: .2em; font-size: 100%; font-weight: normal; }
 span.hw { font-size: 170%; font-weight: 600; }
 html.apple_client-panel span.hw { font-size: 130%; }
 span.pr { font-size: 105%; color: -apple-system-secondary-label; margin-left: .45em; }
@@ -1108,9 +1108,16 @@ span.lbl.x_rr { border: solid 1px -apple-system-secondary-label;
 
 /*==== sense blocks ====*/
 
-span.gramb { display: block; margin: .5em 0; clear: both; }
-span.posg.x_xdh { display: block; margin-bottom: .15em; }
-span.semb { display: block; margin: .2em 0 .2em 2em; clear: both; }
+/* Kept tighter than a full line's worth of margin: the part-of-speech label
+   sits between the headword and the first sense, and Apple's own dictionaries
+   hug it close to both rather than floating it as its own paragraph. The
+   whole block sits 1em in from the headword — the part of speech then pulls
+   back to nearly flush, the way Apple's own dictionaries set it, leaving the
+   1em indent for the sense text itself. */
+span.gramb { display: block; margin: .3em 0 .3em 1em; clear: both; }
+span.posg.x_xdh { display: block; margin-bottom: .1em; margin-left: -.8em; }
+span.semb { display: block; margin: .15em 0 .2em 0; clear: both; }
+span.semb.hasSn { margin-left: 1em; }
 /* The number floats in the gutter so that it stays on the sense's first line
    even when that sense opens with a block — the case of bilingual segments. */
 span.sn { float: left; width: 1.6em; margin-left: -2em; padding-right: .4em;
