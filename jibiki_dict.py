@@ -459,7 +459,7 @@ def suru_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
         "masu": "します", "masu_past": "しました", "masu_neg": "しません", "masu_neg_past": "しませんでした",
         "te": "して", "ta": "した", "nai": "しない", "nai_past": "しなかった", "te_neg": "しなくて",
         "potential": "できる", "volitional": "しよう", "passive": "される", "causative": "させる",
-        "conditional": "すれば", "imperative": "しろ", "tara": "したら",
+        "conditional": "すれば", "imperative": "しろ", "tara": "したら", "nai_conditional": "しなければ",
     }  # fmt: skip
     return {label: (word_stem + suffix, kana_stem + suffix) for label, suffix in endings.items()}
 
@@ -478,7 +478,7 @@ def zuru_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
         "masu": "じます", "masu_past": "じました", "masu_neg": "じません", "masu_neg_past": "じませんでした",
         "te": "じて", "ta": "じた", "nai": "じない", "nai_past": "じなかった", "te_neg": "じなくて",
         "potential": "じられる", "volitional": "じよう", "passive": "じられる", "causative": "じさせる",
-        "conditional": "ずれば", "imperative": "じろ", "tara": "じたら",
+        "conditional": "ずれば", "imperative": "じろ", "tara": "じたら", "nai_conditional": "じなければ",
     }  # fmt: skip
     return {label: (word_stem + suffix, kana_stem + suffix) for label, suffix in endings.items()}
 
@@ -502,6 +502,7 @@ def kuru_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
         "potential_casual": ("来れる", "これる"),
         "passive": ("来られる", "こられる"), "causative": ("来させる", "こさせる"),
         "conditional": ("来れば", "くれば"), "imperative": ("来い", "こい"), "tara": ("来たら", "きたら"),
+        "nai_conditional": ("来なければ", "こなければ"),
     }  # fmt: skip
     return {label: (prefix + w, kana_prefix + k) for label, (w, k) in endings.items()}
 
@@ -517,7 +518,7 @@ def ichidan_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
         # れる: the colloquial ら抜き potential (食べれる), everyday enough in
         # real text to be worth a search key of its own, alongside 食べられる.
         "potential_casual": "れる",
-        "conditional": "れば", "imperative": "ろ", "tara": "たら",
+        "conditional": "れば", "imperative": "ろ", "tara": "たら", "nai_conditional": "なければ",
     }  # fmt: skip
     return {label: (word_stem + suffix, kana_stem + suffix) for label, suffix in endings.items()}
 
@@ -565,6 +566,7 @@ def godan_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
         "conditional": (word_stem + pot_stem + "ば", kana_stem + pot_stem + "ば"),
         "imperative": (word_stem + imperative, kana_stem + imperative),
         "tara": (word_stem + ta + "ら", onbin_kana_stem + ta + "ら"),
+        "nai_conditional": (word_stem + neg_stem + "なければ", kana_stem + neg_stem + "なければ"),
     }
     # ある is negated by the suppletive ない/なかった, never あらない: a
     # one-word exception, corrected after the fact rather than threaded
@@ -573,6 +575,7 @@ def godan_verb_forms(word: str, kana: str) -> dict[str, tuple[str, str]]:
         forms["nai"] = ("ない", "ない")
         forms["nai_past"] = ("なかった", "なかった")
         forms["te_neg"] = ("なくて", "なくて")
+        forms["nai_conditional"] = ("なければ", "なければ")
     return forms
 
 

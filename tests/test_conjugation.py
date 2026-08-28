@@ -159,6 +159,7 @@ class VerbForms(unittest.TestCase):
             "nai": ("話さない", "はなさない"),
             "nai_past": ("話さなかった", "はなさなかった"),
             "te_neg": ("話さなくて", "はなさなくて"),
+            "nai_conditional": ("話さなければ", "はなさなければ"),
             "potential": ("話せる", "はなせる"),
             "volitional": ("話そう", "はなそう"),
             "passive": ("話される", "はなされる"),
@@ -179,6 +180,7 @@ class VerbForms(unittest.TestCase):
             "progressive_nai": ("話していない", "はなしていない"),
             "progressive_nai_past": ("話していなかった", "はなしていなかった"),
             "progressive_te_neg": ("話していなくて", "はなしていなくて"),
+            "progressive_nai_conditional": ("話していなければ", "はなしていなければ"),
             "progressive_conditional": ("話していれば", "はなしていれば"),
             "progressive_tara": ("話していたら", "はなしていたら"),
             "progressive_casual": ("話してる", "はなしてる"),
@@ -191,6 +193,7 @@ class VerbForms(unittest.TestCase):
             "progressive_casual_nai": ("話してない", "はなしてない"),
             "progressive_casual_nai_past": ("話してなかった", "はなしてなかった"),
             "progressive_casual_te_neg": ("話してなくて", "はなしてなくて"),
+            "progressive_casual_nai_conditional": ("話してなければ", "はなしてなければ"),
             "progressive_casual_conditional": ("話してれば", "はなしてれば"),
             "progressive_casual_tara": ("話してたら", "はなしてたら"),
             "potential_masu": ("話せます", "はなせます"),
@@ -202,6 +205,7 @@ class VerbForms(unittest.TestCase):
             "potential_nai": ("話せない", "はなせない"),
             "potential_nai_past": ("話せなかった", "はなせなかった"),
             "potential_te_neg": ("話せなくて", "はなせなくて"),
+            "potential_nai_conditional": ("話せなければ", "はなせなければ"),
             "potential_conditional": ("話せれば", "はなせれば"),
             "potential_tara": ("話せたら", "はなせたら"),
             "causative_masu": ("話させます", "はなさせます"),
@@ -213,6 +217,7 @@ class VerbForms(unittest.TestCase):
             "causative_nai": ("話させない", "はなさせない"),
             "causative_nai_past": ("話させなかった", "はなさせなかった"),
             "causative_te_neg": ("話させなくて", "はなさせなくて"),
+            "causative_nai_conditional": ("話させなければ", "はなさせなければ"),
             "causative_conditional": ("話させれば", "はなさせれば"),
             "causative_tara": ("話させたら", "はなさせたら"),
             "passive_masu": ("話されます", "はなされます"),
@@ -224,6 +229,7 @@ class VerbForms(unittest.TestCase):
             "passive_nai": ("話されない", "はなされない"),
             "passive_nai_past": ("話されなかった", "はなされなかった"),
             "passive_te_neg": ("話されなくて", "はなされなくて"),
+            "passive_nai_conditional": ("話されなければ", "はなされなければ"),
             "passive_conditional": ("話されれば", "はなされれば"),
             "passive_tara": ("話されたら", "はなされたら"),
             "causative_passive": ("話させられる", "はなさせられる"),
@@ -236,6 +242,7 @@ class VerbForms(unittest.TestCase):
             "causative_passive_nai": ("話させられない", "はなさせられない"),
             "causative_passive_nai_past": ("話させられなかった", "はなさせられなかった"),
             "causative_passive_te_neg": ("話させられなくて", "はなさせられなくて"),
+            "causative_passive_nai_conditional": ("話させられなければ", "はなさせられなければ"),
             "causative_passive_conditional": ("話させられれば", "はなさせられれば"),
             "causative_passive_tara": ("話させられたら", "はなさせられたら"),
         }
@@ -265,6 +272,7 @@ class VerbForms(unittest.TestCase):
             "nai": ("食べない", "たべない"),
             "nai_past": ("食べなかった", "たべなかった"),
             "te_neg": ("食べなくて", "たべなくて"),
+            "nai_conditional": ("食べなければ", "たべなければ"),
             "potential": ("食べられる", "たべられる"),
             "potential_casual": ("食べれる", "たべれる"),
             "volitional": ("食べよう", "たべよう"),
@@ -286,6 +294,7 @@ class VerbForms(unittest.TestCase):
             "progressive_nai": ("食べていない", "たべていない"),
             "progressive_nai_past": ("食べていなかった", "たべていなかった"),
             "progressive_te_neg": ("食べていなくて", "たべていなくて"),
+            "progressive_nai_conditional": ("食べていなければ", "たべていなければ"),
             "progressive_conditional": ("食べていれば", "たべていれば"),
             "progressive_tara": ("食べていたら", "たべていたら"),
             "progressive_casual": ("食べてる", "たべてる"),
@@ -298,6 +307,7 @@ class VerbForms(unittest.TestCase):
             "progressive_casual_nai": ("食べてない", "たべてない"),
             "progressive_casual_nai_past": ("食べてなかった", "たべてなかった"),
             "progressive_casual_te_neg": ("食べてなくて", "たべてなくて"),
+            "progressive_casual_nai_conditional": ("食べてなければ", "たべてなければ"),
             "progressive_casual_conditional": ("食べてれば", "たべてれば"),
             "progressive_casual_tara": ("食べてたら", "たべてたら"),
             "potential_masu": ("食べられます", "たべられます"),
@@ -309,6 +319,7 @@ class VerbForms(unittest.TestCase):
             "potential_nai": ("食べられない", "たべられない"),
             "potential_nai_past": ("食べられなかった", "たべられなかった"),
             "potential_te_neg": ("食べられなくて", "たべられなくて"),
+            "potential_nai_conditional": ("食べられなければ", "たべられなければ"),
             "potential_conditional": ("食べられれば", "たべられれば"),
             "potential_tara": ("食べられたら", "たべられたら"),
             "causative_masu": ("食べさせます", "たべさせます"),
@@ -320,6 +331,7 @@ class VerbForms(unittest.TestCase):
             "causative_nai": ("食べさせない", "たべさせない"),
             "causative_nai_past": ("食べさせなかった", "たべさせなかった"),
             "causative_te_neg": ("食べさせなくて", "たべさせなくて"),
+            "causative_nai_conditional": ("食べさせなければ", "たべさせなければ"),
             "causative_conditional": ("食べさせれば", "たべさせれば"),
             "causative_tara": ("食べさせたら", "たべさせたら"),
             "passive_masu": ("食べられます", "たべられます"),
@@ -331,6 +343,7 @@ class VerbForms(unittest.TestCase):
             "passive_nai": ("食べられない", "たべられない"),
             "passive_nai_past": ("食べられなかった", "たべられなかった"),
             "passive_te_neg": ("食べられなくて", "たべられなくて"),
+            "passive_nai_conditional": ("食べられなければ", "たべられなければ"),
             "passive_conditional": ("食べられれば", "たべられれば"),
             "passive_tara": ("食べられたら", "たべられたら"),
             "causative_passive": ("食べさせられる", "たべさせられる"),
@@ -343,6 +356,7 @@ class VerbForms(unittest.TestCase):
             "causative_passive_nai": ("食べさせられない", "たべさせられない"),
             "causative_passive_nai_past": ("食べさせられなかった", "たべさせられなかった"),
             "causative_passive_te_neg": ("食べさせられなくて", "たべさせられなくて"),
+            "causative_passive_nai_conditional": ("食べさせられなければ", "たべさせられなければ"),
             "causative_passive_conditional": ("食べさせられれば", "たべさせられれば"),
             "causative_passive_tara": ("食べさせられたら", "たべさせられたら"),
         }
@@ -360,6 +374,7 @@ class VerbForms(unittest.TestCase):
             "nai": ("勉強しない", "べんきょうしない"),
             "nai_past": ("勉強しなかった", "べんきょうしなかった"),
             "te_neg": ("勉強しなくて", "べんきょうしなくて"),
+            "nai_conditional": ("勉強しなければ", "べんきょうしなければ"),
             "potential": ("勉強できる", "べんきょうできる"),
             "volitional": ("勉強しよう", "べんきょうしよう"),
             "passive": ("勉強される", "べんきょうされる"),
@@ -380,6 +395,7 @@ class VerbForms(unittest.TestCase):
             "progressive_nai": ("勉強していない", "べんきょうしていない"),
             "progressive_nai_past": ("勉強していなかった", "べんきょうしていなかった"),
             "progressive_te_neg": ("勉強していなくて", "べんきょうしていなくて"),
+            "progressive_nai_conditional": ("勉強していなければ", "べんきょうしていなければ"),
             "progressive_conditional": ("勉強していれば", "べんきょうしていれば"),
             "progressive_tara": ("勉強していたら", "べんきょうしていたら"),
             "progressive_casual": ("勉強してる", "べんきょうしてる"),
@@ -392,6 +408,7 @@ class VerbForms(unittest.TestCase):
             "progressive_casual_nai": ("勉強してない", "べんきょうしてない"),
             "progressive_casual_nai_past": ("勉強してなかった", "べんきょうしてなかった"),
             "progressive_casual_te_neg": ("勉強してなくて", "べんきょうしてなくて"),
+            "progressive_casual_nai_conditional": ("勉強してなければ", "べんきょうしてなければ"),
             "progressive_casual_conditional": ("勉強してれば", "べんきょうしてれば"),
             "progressive_casual_tara": ("勉強してたら", "べんきょうしてたら"),
             "potential_masu": ("勉強できます", "べんきょうできます"),
@@ -403,6 +420,7 @@ class VerbForms(unittest.TestCase):
             "potential_nai": ("勉強できない", "べんきょうできない"),
             "potential_nai_past": ("勉強できなかった", "べんきょうできなかった"),
             "potential_te_neg": ("勉強できなくて", "べんきょうできなくて"),
+            "potential_nai_conditional": ("勉強できなければ", "べんきょうできなければ"),
             "potential_conditional": ("勉強できれば", "べんきょうできれば"),
             "potential_tara": ("勉強できたら", "べんきょうできたら"),
             "causative_masu": ("勉強させます", "べんきょうさせます"),
@@ -414,6 +432,7 @@ class VerbForms(unittest.TestCase):
             "causative_nai": ("勉強させない", "べんきょうさせない"),
             "causative_nai_past": ("勉強させなかった", "べんきょうさせなかった"),
             "causative_te_neg": ("勉強させなくて", "べんきょうさせなくて"),
+            "causative_nai_conditional": ("勉強させなければ", "べんきょうさせなければ"),
             "causative_conditional": ("勉強させれば", "べんきょうさせれば"),
             "causative_tara": ("勉強させたら", "べんきょうさせたら"),
             "passive_masu": ("勉強されます", "べんきょうされます"),
@@ -425,6 +444,7 @@ class VerbForms(unittest.TestCase):
             "passive_nai": ("勉強されない", "べんきょうされない"),
             "passive_nai_past": ("勉強されなかった", "べんきょうされなかった"),
             "passive_te_neg": ("勉強されなくて", "べんきょうされなくて"),
+            "passive_nai_conditional": ("勉強されなければ", "べんきょうされなければ"),
             "passive_conditional": ("勉強されれば", "べんきょうされれば"),
             "passive_tara": ("勉強されたら", "べんきょうされたら"),
             "causative_passive": ("勉強させられる", "べんきょうさせられる"),
@@ -437,6 +457,7 @@ class VerbForms(unittest.TestCase):
             "causative_passive_nai": ("勉強させられない", "べんきょうさせられない"),
             "causative_passive_nai_past": ("勉強させられなかった", "べんきょうさせられなかった"),
             "causative_passive_te_neg": ("勉強させられなくて", "べんきょうさせられなくて"),
+            "causative_passive_nai_conditional": ("勉強させられなければ", "べんきょうさせられなければ"),
             "causative_passive_conditional": ("勉強させられれば", "べんきょうさせられれば"),
             "causative_passive_tara": ("勉強させられたら", "べんきょうさせられたら"),
         }
@@ -458,6 +479,7 @@ class VerbForms(unittest.TestCase):
             "nai": ("来ない", "こない"),
             "nai_past": ("来なかった", "こなかった"),
             "te_neg": ("来なくて", "こなくて"),
+            "nai_conditional": ("来なければ", "こなければ"),
             "potential": ("来られる", "こられる"),
             "potential_casual": ("来れる", "これる"),
             "volitional": ("来よう", "こよう"),
@@ -479,6 +501,7 @@ class VerbForms(unittest.TestCase):
             "progressive_nai": ("来ていない", "きていない"),
             "progressive_nai_past": ("来ていなかった", "きていなかった"),
             "progressive_te_neg": ("来ていなくて", "きていなくて"),
+            "progressive_nai_conditional": ("来ていなければ", "きていなければ"),
             "progressive_conditional": ("来ていれば", "きていれば"),
             "progressive_tara": ("来ていたら", "きていたら"),
             "progressive_casual": ("来てる", "きてる"),
@@ -491,6 +514,7 @@ class VerbForms(unittest.TestCase):
             "progressive_casual_nai": ("来てない", "きてない"),
             "progressive_casual_nai_past": ("来てなかった", "きてなかった"),
             "progressive_casual_te_neg": ("来てなくて", "きてなくて"),
+            "progressive_casual_nai_conditional": ("来てなければ", "きてなければ"),
             "progressive_casual_conditional": ("来てれば", "きてれば"),
             "progressive_casual_tara": ("来てたら", "きてたら"),
             "potential_masu": ("来られます", "こられます"),
@@ -502,6 +526,7 @@ class VerbForms(unittest.TestCase):
             "potential_nai": ("来られない", "こられない"),
             "potential_nai_past": ("来られなかった", "こられなかった"),
             "potential_te_neg": ("来られなくて", "こられなくて"),
+            "potential_nai_conditional": ("来られなければ", "こられなければ"),
             "potential_conditional": ("来られれば", "こられれば"),
             "potential_tara": ("来られたら", "こられたら"),
             "causative_masu": ("来させます", "こさせます"),
@@ -513,6 +538,7 @@ class VerbForms(unittest.TestCase):
             "causative_nai": ("来させない", "こさせない"),
             "causative_nai_past": ("来させなかった", "こさせなかった"),
             "causative_te_neg": ("来させなくて", "こさせなくて"),
+            "causative_nai_conditional": ("来させなければ", "こさせなければ"),
             "causative_conditional": ("来させれば", "こさせれば"),
             "causative_tara": ("来させたら", "こさせたら"),
             "passive_masu": ("来られます", "こられます"),
@@ -524,6 +550,7 @@ class VerbForms(unittest.TestCase):
             "passive_nai": ("来られない", "こられない"),
             "passive_nai_past": ("来られなかった", "こられなかった"),
             "passive_te_neg": ("来られなくて", "こられなくて"),
+            "passive_nai_conditional": ("来られなければ", "こられなければ"),
             "passive_conditional": ("来られれば", "こられれば"),
             "passive_tara": ("来られたら", "こられたら"),
             "causative_passive": ("来させられる", "こさせられる"),
@@ -536,6 +563,7 @@ class VerbForms(unittest.TestCase):
             "causative_passive_nai": ("来させられない", "こさせられない"),
             "causative_passive_nai_past": ("来させられなかった", "こさせられなかった"),
             "causative_passive_te_neg": ("来させられなくて", "こさせられなくて"),
+            "causative_passive_nai_conditional": ("来させられなければ", "こさせられなければ"),
             "causative_passive_conditional": ("来させられれば", "こさせられれば"),
             "causative_passive_tara": ("来させられたら", "こさせられたら"),
         }
@@ -606,6 +634,7 @@ class VerbForms(unittest.TestCase):
         self.assertEqual(forms["nai"], ("ない", "ない"))
         self.assertEqual(forms["nai_past"], ("なかった", "なかった"))
         self.assertEqual(forms["te_neg"], ("なくて", "なくて"))
+        self.assertEqual(forms["nai_conditional"], ("なければ", "なければ"))
         # Everything else about ある is regular godan.
         self.assertEqual(forms["masu"], ("あります", "あります"))
         self.assertEqual(forms["te"], ("あって", "あって"))
@@ -641,6 +670,7 @@ class VerbForms(unittest.TestCase):
         self.assertEqual(forms["masu"], ("論じます", "ろんじます"))
         self.assertEqual(forms["te"], ("論じて", "ろんじて"))
         self.assertEqual(forms["nai"], ("論じない", "ろんじない"))
+        self.assertEqual(forms["nai_conditional"], ("論じなければ", "ろんじなければ"))
         self.assertEqual(forms["conditional"], ("論ずれば", "ろんずれば"))
         self.assertEqual(forms["potential"], ("論じられる", "ろんじられる"))
 
