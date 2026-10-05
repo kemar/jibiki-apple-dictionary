@@ -619,6 +619,18 @@ def merge_paradigm(forms: dict[str, tuple[str, str]], prefix: str, word: str, ka
         forms[f"{prefix}_{label}"] = form
 
 
+def merge_desiderative(forms: dict[str, tuple[str, str]], label: str, stem_word: str, stem_kana: str) -> None:
+    """
+    Adds the desiderative built on a ます-stem (stem + たい) to forms under
+    label, plus label_<adjective label> for each of its own inflections:
+    たい conjugates as an i-adjective (たくない, たかった...).
+    """
+    tai_word, tai_kana = stem_word + "たい", stem_kana + "たい"
+    forms[label] = (tai_word, tai_kana)
+    for adjective_label, form in adjective_forms(tai_word, tai_kana).items():
+        forms[f"{label}_{adjective_label}"] = form
+
+
 def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
     """
     Inflected (kanji, kana) pairs for a verb already classified by classify_verb.
@@ -668,6 +680,14 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
       食べていた), plus the い抜き casual contraction (食べてる, common enough
       in real text to index, mirroring the ら抜き potential_casual below) and
       that contraction's own paradigm (食べてた, 食べてない).
+    - the desiderative (戻りたい, "to want to go back"): the ます-stem plus
+      たい, which then inflects as an i-adjective (戻りたくない, 戻りたかった),
+      so adjective_forms supplies its paradigm. The honorific godan verbs
+      take it on their regular り stem (いらっしゃりたい), not on the い of
+      their ます-stem.
+    - the desiderative stacked on the passive and the causative (愛されたい
+      "to want to be loved", 行かせたい "to want to make/let go"): both end
+      in an ichidan-shaped る, so dropping it gives the stem たい goes on.
     """
     forms = VERB_FORM_BUILDERS[klass](word, kana)
     if not forms:
@@ -676,6 +696,11 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
     masu_word, masu_kana = forms["masu"]
     forms["imperative_polite"] = (masu_word[:-2] + "なさい", masu_kana[:-2] + "なさい")
     forms["stem"] = (masu_word[:-2], masu_kana[:-2])
+
+    tai_word, tai_kana = forms["stem"]
+    if klass == "godan" and kana in HONORIFIC_GODAN_KANA:
+        tai_word, tai_kana = word[:-1] + "り", kana[:-1] + "り"
+    merge_desiderative(forms, "tai", tai_word, tai_kana)
 
     te_word, te_kana = forms["te"]
     progressive_word, progressive_kana = te_word + "いる", te_kana + "いる"
@@ -691,9 +716,11 @@ def verb_forms(word: str, kana: str, klass: str) -> dict[str, tuple[str, str]]:
 
     passive_word, passive_kana = forms["passive"]
     merge_paradigm(forms, "passive", passive_word, passive_kana)
+    merge_desiderative(forms, "passive_tai", passive_word[:-1], passive_kana[:-1])
 
     causative_word, causative_kana = forms["causative"]
     merge_paradigm(forms, "causative", causative_word, causative_kana)
+    merge_desiderative(forms, "causative_tai", causative_word[:-1], causative_kana[:-1])
 
     cp_word, cp_kana = causative_word[:-1] + "られる", causative_kana[:-1] + "られる"
     forms["causative_passive"] = (cp_word, cp_kana)

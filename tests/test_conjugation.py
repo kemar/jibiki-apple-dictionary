@@ -170,6 +170,33 @@ class VerbForms(unittest.TestCase):
             "prohibitive": ("話すな", "はなすな"),
             "imperative_polite": ("話しなさい", "はなしなさい"),
             "stem": ("話し", "はなし"),
+            "tai": ("話したい", "はなしたい"),
+            "tai_neg": ("話したくない", "はなしたくない"),
+            "tai_past": ("話したかった", "はなしたかった"),
+            "tai_neg_past": ("話したくなかった", "はなしたくなかった"),
+            "tai_te": ("話したくて", "はなしたくて"),
+            "tai_conditional": ("話したければ", "はなしたければ"),
+            "tai_tara": ("話したかったら", "はなしたかったら"),
+            "tai_presumptive": ("話したかろう", "はなしたかろう"),
+            "tai_te_neg": ("話したくなくて", "はなしたくなくて"),
+            "passive_tai": ("話されたい", "はなされたい"),
+            "passive_tai_neg": ("話されたくない", "はなされたくない"),
+            "passive_tai_past": ("話されたかった", "はなされたかった"),
+            "passive_tai_neg_past": ("話されたくなかった", "はなされたくなかった"),
+            "passive_tai_te": ("話されたくて", "はなされたくて"),
+            "passive_tai_conditional": ("話されたければ", "はなされたければ"),
+            "passive_tai_tara": ("話されたかったら", "はなされたかったら"),
+            "passive_tai_presumptive": ("話されたかろう", "はなされたかろう"),
+            "passive_tai_te_neg": ("話されたくなくて", "はなされたくなくて"),
+            "causative_tai": ("話させたい", "はなさせたい"),
+            "causative_tai_neg": ("話させたくない", "はなさせたくない"),
+            "causative_tai_past": ("話させたかった", "はなさせたかった"),
+            "causative_tai_neg_past": ("話させたくなかった", "はなさせたくなかった"),
+            "causative_tai_te": ("話させたくて", "はなさせたくて"),
+            "causative_tai_conditional": ("話させたければ", "はなさせたければ"),
+            "causative_tai_tara": ("話させたかったら", "はなさせたかったら"),
+            "causative_tai_presumptive": ("話させたかろう", "はなさせたかろう"),
+            "causative_tai_te_neg": ("話させたくなくて", "はなさせたくなくて"),
             "progressive": ("話している", "はなしている"),
             "progressive_masu": ("話しています", "はなしています"),
             "progressive_masu_past": ("話していました", "はなしていました"),
@@ -284,6 +311,33 @@ class VerbForms(unittest.TestCase):
             "prohibitive": ("食べるな", "たべるな"),
             "imperative_polite": ("食べなさい", "たべなさい"),
             "stem": ("食べ", "たべ"),
+            "tai": ("食べたい", "たべたい"),
+            "tai_neg": ("食べたくない", "たべたくない"),
+            "tai_past": ("食べたかった", "たべたかった"),
+            "tai_neg_past": ("食べたくなかった", "たべたくなかった"),
+            "tai_te": ("食べたくて", "たべたくて"),
+            "tai_conditional": ("食べたければ", "たべたければ"),
+            "tai_tara": ("食べたかったら", "たべたかったら"),
+            "tai_presumptive": ("食べたかろう", "たべたかろう"),
+            "tai_te_neg": ("食べたくなくて", "たべたくなくて"),
+            "passive_tai": ("食べられたい", "たべられたい"),
+            "passive_tai_neg": ("食べられたくない", "たべられたくない"),
+            "passive_tai_past": ("食べられたかった", "たべられたかった"),
+            "passive_tai_neg_past": ("食べられたくなかった", "たべられたくなかった"),
+            "passive_tai_te": ("食べられたくて", "たべられたくて"),
+            "passive_tai_conditional": ("食べられたければ", "たべられたければ"),
+            "passive_tai_tara": ("食べられたかったら", "たべられたかったら"),
+            "passive_tai_presumptive": ("食べられたかろう", "たべられたかろう"),
+            "passive_tai_te_neg": ("食べられたくなくて", "たべられたくなくて"),
+            "causative_tai": ("食べさせたい", "たべさせたい"),
+            "causative_tai_neg": ("食べさせたくない", "たべさせたくない"),
+            "causative_tai_past": ("食べさせたかった", "たべさせたかった"),
+            "causative_tai_neg_past": ("食べさせたくなかった", "たべさせたくなかった"),
+            "causative_tai_te": ("食べさせたくて", "たべさせたくて"),
+            "causative_tai_conditional": ("食べさせたければ", "たべさせたければ"),
+            "causative_tai_tara": ("食べさせたかったら", "たべさせたかったら"),
+            "causative_tai_presumptive": ("食べさせたかろう", "たべさせたかろう"),
+            "causative_tai_te_neg": ("食べさせたくなくて", "たべさせたくなくて"),
             "progressive": ("食べている", "たべている"),
             "progressive_masu": ("食べています", "たべています"),
             "progressive_masu_past": ("食べていました", "たべていました"),
@@ -385,6 +439,33 @@ class VerbForms(unittest.TestCase):
             "prohibitive": ("勉強するな", "べんきょうするな"),
             "imperative_polite": ("勉強しなさい", "べんきょうしなさい"),
             "stem": ("勉強し", "べんきょうし"),
+            "tai": ("勉強したい", "べんきょうしたい"),
+            "tai_neg": ("勉強したくない", "べんきょうしたくない"),
+            "tai_past": ("勉強したかった", "べんきょうしたかった"),
+            "tai_neg_past": ("勉強したくなかった", "べんきょうしたくなかった"),
+            "tai_te": ("勉強したくて", "べんきょうしたくて"),
+            "tai_conditional": ("勉強したければ", "べんきょうしたければ"),
+            "tai_tara": ("勉強したかったら", "べんきょうしたかったら"),
+            "tai_presumptive": ("勉強したかろう", "べんきょうしたかろう"),
+            "tai_te_neg": ("勉強したくなくて", "べんきょうしたくなくて"),
+            "passive_tai": ("勉強されたい", "べんきょうされたい"),
+            "passive_tai_neg": ("勉強されたくない", "べんきょうされたくない"),
+            "passive_tai_past": ("勉強されたかった", "べんきょうされたかった"),
+            "passive_tai_neg_past": ("勉強されたくなかった", "べんきょうされたくなかった"),
+            "passive_tai_te": ("勉強されたくて", "べんきょうされたくて"),
+            "passive_tai_conditional": ("勉強されたければ", "べんきょうされたければ"),
+            "passive_tai_tara": ("勉強されたかったら", "べんきょうされたかったら"),
+            "passive_tai_presumptive": ("勉強されたかろう", "べんきょうされたかろう"),
+            "passive_tai_te_neg": ("勉強されたくなくて", "べんきょうされたくなくて"),
+            "causative_tai": ("勉強させたい", "べんきょうさせたい"),
+            "causative_tai_neg": ("勉強させたくない", "べんきょうさせたくない"),
+            "causative_tai_past": ("勉強させたかった", "べんきょうさせたかった"),
+            "causative_tai_neg_past": ("勉強させたくなかった", "べんきょうさせたくなかった"),
+            "causative_tai_te": ("勉強させたくて", "べんきょうさせたくて"),
+            "causative_tai_conditional": ("勉強させたければ", "べんきょうさせたければ"),
+            "causative_tai_tara": ("勉強させたかったら", "べんきょうさせたかったら"),
+            "causative_tai_presumptive": ("勉強させたかろう", "べんきょうさせたかろう"),
+            "causative_tai_te_neg": ("勉強させたくなくて", "べんきょうさせたくなくて"),
             "progressive": ("勉強している", "べんきょうしている"),
             "progressive_masu": ("勉強しています", "べんきょうしています"),
             "progressive_masu_past": ("勉強していました", "べんきょうしていました"),
@@ -491,6 +572,33 @@ class VerbForms(unittest.TestCase):
             "prohibitive": ("来るな", "くるな"),
             "imperative_polite": ("来なさい", "きなさい"),
             "stem": ("来", "き"),
+            "tai": ("来たい", "きたい"),
+            "tai_neg": ("来たくない", "きたくない"),
+            "tai_past": ("来たかった", "きたかった"),
+            "tai_neg_past": ("来たくなかった", "きたくなかった"),
+            "tai_te": ("来たくて", "きたくて"),
+            "tai_conditional": ("来たければ", "きたければ"),
+            "tai_tara": ("来たかったら", "きたかったら"),
+            "tai_presumptive": ("来たかろう", "きたかろう"),
+            "tai_te_neg": ("来たくなくて", "きたくなくて"),
+            "passive_tai": ("来られたい", "こられたい"),
+            "passive_tai_neg": ("来られたくない", "こられたくない"),
+            "passive_tai_past": ("来られたかった", "こられたかった"),
+            "passive_tai_neg_past": ("来られたくなかった", "こられたくなかった"),
+            "passive_tai_te": ("来られたくて", "こられたくて"),
+            "passive_tai_conditional": ("来られたければ", "こられたければ"),
+            "passive_tai_tara": ("来られたかったら", "こられたかったら"),
+            "passive_tai_presumptive": ("来られたかろう", "こられたかろう"),
+            "passive_tai_te_neg": ("来られたくなくて", "こられたくなくて"),
+            "causative_tai": ("来させたい", "こさせたい"),
+            "causative_tai_neg": ("来させたくない", "こさせたくない"),
+            "causative_tai_past": ("来させたかった", "こさせたかった"),
+            "causative_tai_neg_past": ("来させたくなかった", "こさせたくなかった"),
+            "causative_tai_te": ("来させたくて", "こさせたくて"),
+            "causative_tai_conditional": ("来させたければ", "こさせたければ"),
+            "causative_tai_tara": ("来させたかったら", "こさせたかったら"),
+            "causative_tai_presumptive": ("来させたかろう", "こさせたかろう"),
+            "causative_tai_te_neg": ("来させたくなくて", "こさせたくなくて"),
             "progressive": ("来ている", "きている"),
             "progressive_masu": ("来ています", "きています"),
             "progressive_masu_past": ("来ていました", "きていました"),
@@ -748,6 +856,55 @@ class VerbForms(unittest.TestCase):
         for (word, kana, klass), expected in cases.items():
             with self.subTest(word=word):
                 self.assertEqual(jd.verb_forms(word, kana, klass)["imperative_polite"], expected)
+
+    def test_desiderative_across_every_class(self):
+        """
+        たい (the desiderative: 戻りたい, "to want to go back"): built off the
+        ます-stem, like なさい.
+        """
+        cases = {
+            ("戻る", "もどる", "godan"): ("戻りたい", "もどりたい"),
+            ("食べる", "たべる", "ichidan"): ("食べたい", "たべたい"),
+            ("する", "する", "suru"): ("したい", "したい"),
+            ("来る", "くる", "kuru"): ("来たい", "きたい"),
+            ("論ずる", "ろんずる", "zuru"): ("論じたい", "ろんじたい"),
+        }
+        for (word, kana, klass), expected in cases.items():
+            with self.subTest(word=word):
+                self.assertEqual(jd.verb_forms(word, kana, klass)["tai"], expected)
+
+    def test_desiderative_inflects_as_an_i_adjective(self):
+        forms = jd.verb_forms("戻る", "もどる", "godan")
+        self.assertEqual(forms["tai_neg"], ("戻りたくない", "もどりたくない"))
+        self.assertEqual(forms["tai_past"], ("戻りたかった", "もどりたかった"))
+        self.assertEqual(forms["tai_neg_past"], ("戻りたくなかった", "もどりたくなかった"))
+        self.assertEqual(forms["tai_te"], ("戻りたくて", "もどりたくて"))
+        self.assertEqual(forms["tai_conditional"], ("戻りたければ", "もどりたければ"))
+
+    def test_desiderative_stacks_on_passive_and_causative(self):
+        """
+        愛されたい ("to want to be loved"), 行かせたい ("to want to make/let
+        go"): たい on the passive's and the causative's own stem, with the
+        same i-adjective inflections as the plain desiderative.
+        """
+        forms = jd.verb_forms("愛する", "あいする", "suru")
+        self.assertEqual(forms["passive_tai"], ("愛されたい", "あいされたい"))
+        self.assertEqual(forms["passive_tai_neg"], ("愛されたくない", "あいされたくない"))
+        forms = jd.verb_forms("行く", "いく", "godan")
+        self.assertEqual(forms["causative_tai"], ("行かせたい", "いかせたい"))
+        self.assertEqual(forms["causative_tai_past"], ("行かせたかった", "いかせたかった"))
+        forms = jd.verb_forms("食べる", "たべる", "ichidan")
+        self.assertEqual(forms["passive_tai"], ("食べられたい", "たべられたい"))
+        self.assertEqual(forms["causative_tai"], ("食べさせたい", "たべさせたい"))
+
+    def test_honorific_godan_desiderative_keeps_the_ri_stem(self):
+        """
+        The い of いらっしゃいます is a ます-only irregularity: たい goes on
+        the regular り stem (いらっしゃりたい, never いらっしゃいたい).
+        """
+        forms = jd.verb_forms("いらっしゃる", "いらっしゃる", "godan")
+        self.assertEqual(forms["tai"], ("いらっしゃりたい", "いらっしゃりたい"))
+        self.assertEqual(forms["tai_neg"], ("いらっしゃりたくない", "いらっしゃりたくない"))
 
     def test_prohibitive_and_polite_imperative_absent_when_unclassified(self):
         """
